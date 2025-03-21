@@ -295,7 +295,7 @@ internal sealed class Help : MeCommandBase
         {
             var info = CollectInforamation(cmd);
             var printIt = info.GetFormated();
-            Log.Trace(printIt);
+            Print.String(printIt);
         }
     }
 

@@ -17,6 +17,7 @@ internal static class EntryPoint
     public static void Main(string[] args)
     {
 #if DEBUG
+        Print.String("Running in debug mode");
         Log.InitializeLogger(ApplicationDefaults.GetDebugLogger());
         var pretendInput = Console.ReadLine();
         var argsPretender = pretendInput.Split(' ');
