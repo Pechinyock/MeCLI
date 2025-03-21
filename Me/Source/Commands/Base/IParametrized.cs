@@ -2,11 +2,13 @@
 
 public interface IParametrized
 {
-    void SetParameters(Dictionary<string, string> value);
+    public void SetParameters(Dictionary<string, string> value);
 
-    Dictionary<string, string> GetParameters();
+    public Dictionary<string, string> GetPassedParameters();
 
-    string[] GetParameterIndicators();
+    public Dictionary<string, string> GetAvailableParameters();
 
-    string[] GetAllowedParams();
+    public string GetParameterIndicator();
+
+    public string[] GetParamsWithDescription();
 }

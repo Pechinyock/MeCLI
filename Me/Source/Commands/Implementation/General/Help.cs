@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Diagnostics;
+using System.ComponentModel.DataAnnotations;
 
 namespace Me;
 
@@ -18,8 +19,8 @@ internal sealed class Help : MeCommandBase
     private class CommandInfo
     {
         public string Alias { get; private set; }
-        public string[] ParamsAndArgs { get; private set; }
-        public string[] Description { get; private set; }
+        public string[] ArgsAndParams { get; private set; }
+        public string Description { get; private set; }
 
         public CommandInfo(string alias, string[] args, string[] parameters, string description)
         {
@@ -44,33 +45,9 @@ internal sealed class Help : MeCommandBase
                     ++index;
                 }
             }
-            ParamsAndArgs = appendArgsAndParams;
+            ArgsAndParams = appendArgsAndParams;
             Alias = alias;
-            Description = SplitDescriptionByRows(description);
-        }
-
-        public int GetTotalRows()
-        {
-            var totalParamsArgsRows = GetArgsParamsRowsCount();
-            var totalDescriptionRows = GetDescriptionRowsCount();
-
-            var totalRows = Math.Max(totalParamsArgsRows, totalDescriptionRows);
-
-            return totalRows;
-        }
-
-        public int GetArgsParamsRowsCount()
-        {
-            return ParamsAndArgs is null
-                   ? 0
-                   : ParamsAndArgs.Length;
-        }
-
-        public int GetDescriptionRowsCount() 
-        {
-            return Description is null
-                   ? 0
-                   : Description.Length;
+            Description = description;
         }
 
         public string GetFormated() 
@@ -82,10 +59,18 @@ internal sealed class Help : MeCommandBase
             var descriptioonColumWidth = TableSpec.CalculateColumnwidth(ColumnsEnum.Description, Console.WindowWidth);
 
             var aliasRowsCount = 1;
-            var argsParamsRowsCount = GetArgsParamsRowsCount();
-            var descriptioonRowsCount = GetDescriptionRowsCount();
+            var paramsAndArgs = FitArgsParamsToCell();
+            var argsParamsRowsCount = paramsAndArgs is null
+                                    ? 0
+                                    : paramsAndArgs.Length;
+
+            var formatedDescripton = FitDescriptionToCell();
+            var descriptioonRowsCount = formatedDescripton is null
+                                      ? 0
+                                      : formatedDescripton.Length;
 
             var totalRows = Math.Max(argsParamsRowsCount, descriptioonRowsCount);
+
 
             for (int i = 0; i < totalRows; ++i) 
             {
@@ -100,7 +85,7 @@ internal sealed class Help : MeCommandBase
 
                 if (i < argsParamsRowsCount)
                 {
-                    AppendToCellEnd(sb, ParamsAndArgs[i], argsParamsColumWidth);
+                    AppendToCellEnd(sb, paramsAndArgs[i], argsParamsColumWidth);
                 }
                 else 
                 {
@@ -109,7 +94,7 @@ internal sealed class Help : MeCommandBase
 
                 if (i < descriptioonRowsCount)
                 {
-                    AppendToCellEnd(sb, Description[i], descriptioonColumWidth);
+                    AppendToCellEnd(sb, formatedDescripton[i], descriptioonColumWidth);
                     sb.Append($"{Environment.NewLine}");
                 }
                 else 
@@ -148,20 +133,52 @@ internal sealed class Help : MeCommandBase
             }
         }
 
-        private string[] SplitDescriptionByRows(string sourceText)
+        private string[] FitArgsParamsToCell() 
         {
-            if (String.IsNullOrEmpty(sourceText))
+            var fitToWidth = TableSpec.CalculateColumnwidth(ColumnsEnum.ParamSlashArgs, Console.WindowWidth);
+            var rowSplitedText = new List<string>();
+            foreach (var element in ArgsAndParams) 
+            {
+                var words = element.Split(' ');
+                var freeSpace = fitToWidth;
+                var sb = new StringBuilder();
+                foreach (var word in words) 
+                {
+                    if (String.IsNullOrEmpty(word))
+                        continue;
+
+                    var wordCharCount = word.Length;
+                    if (wordCharCount > freeSpace) 
+                    {
+                        rowSplitedText.Add(sb.ToString());
+                        sb.Clear();
+                        freeSpace = fitToWidth;
+                        sb.Append($"{word} ");
+                        freeSpace -= wordCharCount + 1;
+                        continue;
+                    }
+                    sb.Append($"{word} ");
+                    freeSpace -= wordCharCount + 1;
+                }
+                rowSplitedText.Add(sb.ToString());
+            }
+            return rowSplitedText.ToArray();
+        }
+
+        private string[] FitDescriptionToCell()
+        {
+            if (String.IsNullOrEmpty(Description))
                 return null;
 
             var fitToWidth = TableSpec.CalculateColumnwidth(ColumnsEnum.Description, Console.WindowWidth);
             var rowSlplitedText = new List<string>();
-            var words = sourceText.Split(' ');
+            var words = Description.Split(' ');
             var sb = new StringBuilder();
             var freeSpace = fitToWidth;
             foreach (var word in words)
             {
                 var wordCharCount = word.Length;
-                if (wordCharCount >= freeSpace)
+                if (wordCharCount > freeSpace)
                 {
                     rowSlplitedText.Add(sb.ToString());
                     sb.Clear();
@@ -184,8 +201,8 @@ internal sealed class Help : MeCommandBase
     {
         public static readonly Dictionary<ColumnsEnum, int> ColumnsSizePresentage = new()
         {
-            { ColumnsEnum.Alias, 20 },
-            { ColumnsEnum.ParamSlashArgs, 20 },
+            { ColumnsEnum.Alias, 10 },
+            { ColumnsEnum.ParamSlashArgs, 30 },
             { ColumnsEnum.Description, 60 }
         };
 
@@ -202,6 +219,11 @@ internal sealed class Help : MeCommandBase
     #endregion
 
     private string[] _passedArguments;
+
+    private readonly Dictionary<string, string> _argsWithDescription = new()
+    {
+        { "<command>", "prints specific command help " }
+    };
 
     public override string Alias => "help";
 
@@ -226,18 +248,39 @@ internal sealed class Help : MeCommandBase
 
     public void SetArguments(string[] value) => _passedArguments = value;
 
-    public string[] GetAllowedArgs() => new string[] { "<any command>" };
+    public string[] GetPassedArguments() => _passedArguments;
+
+    public Dictionary<string, string> GetAvailableArgs() => _argsWithDescription;
+
+    public string[] GetArgsWithdescription() => CommandsDefaults.GetArgsOrParamsDescriptionDefault(_argsWithDescription, GetArgumentIndicator());
 
     public string GetDescription() => "Prints information about all available commands";
 
     private void PrintCommandHelp()
     {
-
+        var toPrint = new List<MeCommandBase>(_passedArguments.Length);
+        foreach (var passed in _passedArguments) 
+        {
+            var cmd = Librarian.Request(passed);
+            if (cmd == null)
+            {
+                Log.Error($"Command: {passed} not found");
+                continue;
+            }
+            toPrint.Add(cmd);
+        }
+        PrintCommandHelp(toPrint.ToArray());
     }
 
     private void PrintLetterHelp(char letter)
     {
-
+        var requestedCommands = Librarian.Request(letter);
+        if (requestedCommands is null || requestedCommands.Length == 0)
+        {
+            Log.Error($"Commands thas starts with character '{letter}' not found");
+            return;
+        }
+        PrintCommandHelp(requestedCommands);
     }
 
     private void PrintGlobalHelp()
@@ -267,14 +310,14 @@ internal sealed class Help : MeCommandBase
         if (cmd.IsArgumented())
         {
             var argumented = cmd as IArgumented;
-            commandArgs = argumented.GetAllowedArgs();
+            commandArgs = argumented.GetArgsWithdescription();
         }
 
         string[] commandParams = null;
         if (cmd.IsParametrized())
         {
             var parametrized = cmd as IParametrized;
-            commandParams = parametrized.GetAllowedParams();
+            commandParams = parametrized.GetParamsWithDescription();
         }
 
         string commandDescription = null;

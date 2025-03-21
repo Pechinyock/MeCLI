@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using System.Text;
+﻿using System.Text;
+using System.Diagnostics;
 
 namespace Me;
 
@@ -39,6 +39,30 @@ internal sealed class Parse : StageBase
         argumented.SetArguments(argumetns);
     }
 
+    private string[] GetArguments(string[] tokens, string argIndicator)
+    {
+        if (tokens.Length <= 1)
+            return null;
+
+        var args = new List<string>(tokens.Length - 1);
+
+        for (int i = 1; i < tokens.Length; ++i)
+        {
+            if (String.IsNullOrEmpty(tokens[i]))
+                continue;
+
+            var currentToken = tokens[i];
+
+            if (!IsIndicator(currentToken, argIndicator))
+                continue;
+
+
+            args.Add(currentToken.Substring(argIndicator.Length));
+        }
+
+        return args.ToArray();
+    }
+
     private void FillExternal(string[] input, MeCommandBase foundedInRegistry)
     {
         var external = foundedInRegistry as IExternal;
@@ -59,72 +83,62 @@ internal sealed class Parse : StageBase
 
     private void FillParameters(string[] input, MeCommandBase foundedInRegistry)
     {
+        var parametrized = foundedInRegistry as IParametrized;
+        Debug.Assert(parametrized is not null, $"{foundedInRegistry.Alias} marked as paramtrized but doesn't implement {nameof(IParametrized)}");
+
+        var parameters = GetParameters(input, parametrized.GetParameterIndicator());
+
+        parametrized.SetParameters(parameters);
     }
 
-    private string[] GetArguments(string[] tokens, string argIndicator)
+    private Dictionary<string, string> GetParameters(string[] tokens, string paramIndicator)
     {
         if (tokens.Length <= 1)
             return null;
 
-        var args = new List<string>(tokens.Length - 1);
-
+        var result = new Dictionary<string, string>();
         for (int i = 1; i < tokens.Length; ++i)
         {
-            if (String.IsNullOrEmpty(tokens[i]))
-                continue;
-
             var currentToken = tokens[i];
-
-            if (!currentToken.StartsWith(argIndicator))
+            if (String.IsNullOrEmpty(currentToken))
                 continue;
 
-            if (i == tokens.Length - 1)
-            {
-                args.Add(currentToken.Substring(argIndicator.Length));
-                break;
-            }
+            if (!IsIndicator(currentToken, paramIndicator))
+                continue;
 
-            args.Add($"{currentToken} ");
+            var key = currentToken.Substring(paramIndicator.Length);
+            var nextIndex = i + 1;
+            string value = nextIndex < tokens.Length
+                ? tokens[nextIndex]
+                : null;
+
+            if (result.ContainsKey(key))
+            {
+                OnFailure?.Invoke($"Parameter with the same name was provided: {currentToken}");
+                return null;
+            }
+            result.Add(key, value);
         }
 
-        return args.ToArray();
+        return result;
     }
 
-    //private static string GetParameters(string[] tokens, string[] paramIndicator)
-    //{
-    //    if (!paramIndicator.Any())
-    //        throw new ArgumentNullException(nameof(paramIndicator));
+    private static bool IsIndicator(string token, string indicator) 
+    {
+        Debug.Assert(!String.IsNullOrEmpty(token));
 
-    //    if (tokens.Length <= 1)
-    //        return null;
+        var tokenToLower = token.ToLower();
+        var indicatorToLower = indicator.ToLower();
 
-    //    var sb = new StringBuilder();
+        for (int i = 0; i < indicator.Length; i++)
+        {
+            if (indicatorToLower[i] != tokenToLower[i])
+                return false;
+        }
 
-    //    for (int i = 1; i < tokens.Length;)
-    //    {
-    //        var currentToken = tokens[i];
+        var nextToIndicatorChar = token[indicator.Length];
+        var result = Char.IsLetter(nextToIndicatorChar);
 
-    //        if (!currentToken.IsStartWithIndicator(paramIndicator))
-    //        {
-    //            ++i;
-    //            continue;
-    //        }
-
-    //        if (i == tokens.Length - 1)
-    //            break;
-
-    //        var nextToken = tokens[i + 1];
-
-    //        if (nextToken.IsStartWithIndicator(paramIndicator))
-    //        {
-    //            ++i;
-    //            continue;
-    //        }
-
-    //        sb.Append($"{currentToken} {nextToken} ");
-    //        i += 2;
-    //    }
-
-    //    return sb.ToString();
-    //}
+        return result;
+    }
 }

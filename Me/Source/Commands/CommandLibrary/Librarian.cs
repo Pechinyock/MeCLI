@@ -56,5 +56,6 @@ public abstract class Librarian
         { 'h', H.Get() },
         { 't', T.Get() },
         { 'e', E.Get() },
+        { 'c', C.Get() }
     };
 }

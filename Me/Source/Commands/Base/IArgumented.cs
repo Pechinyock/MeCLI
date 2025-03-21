@@ -4,7 +4,11 @@ internal interface IArgumented
 {
     public void SetArguments(string[] value);
 
+    public string[] GetPassedArguments();
+
     public string GetArgumentIndicator();
 
-    public string[] GetAllowedArgs();
+    public string[] GetArgsWithdescription();
+
+    public Dictionary<string, string> GetAvailableArgs();
 }
