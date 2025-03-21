@@ -26,15 +26,11 @@ internal sealed class Tools : MeCommandBase
         Console.WriteLine("Executing tools");
     }
 
-    public string GetDescription() => "It is tools description";
-
-    public Dictionary<string, string> GetParamsArgsDescription() => new Dictionary<string, string>() 
-    {
-        { _availableArgumetns[0], "prints all of available tools" }
-    };
+    public string GetDescription() => "It is tools description It is tools description It is tools description It is tools description It is tools description It is tools description It is tools description It is tools description It is tools description It is tools description It is tools description It is tools description It is tools description It is tools description It is tools description It is tools description It is tools description";
 
     public void SetArguments(string[] value) => _pasedArguments = value;
 
     public string GetArgumentIndicator() => CommandsDefaults.ARGS_INDICATOR;
 
+    public string[] GetAllowedArgs() => _availableArgumetns;
 }

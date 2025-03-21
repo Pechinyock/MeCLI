@@ -14,7 +14,7 @@ internal static class ApplicationDefaults
     public static ILogger GetConsoleReleaseLogger() 
     {
         var log = new ConsoleLogger();
-        log.SetVerbosity(Verbosity.Error | Verbosity.Info | Verbosity.Trace);
+        log.SetVerbosity(Verbosity.Error | Verbosity.Info | Verbosity.Warn | Verbosity.Trace);
         return log;
     }
 }
