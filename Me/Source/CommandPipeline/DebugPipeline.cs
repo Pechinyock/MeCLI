@@ -27,8 +27,7 @@ internal sealed class DebugPipeline : PipelineBase
 
     private void ErrorHandler(string reason) 
     {
-        Log.Error($"Something went wrong!");
-        Log.Error(reason);
+        Print.Error(reason);
     }
 }
 

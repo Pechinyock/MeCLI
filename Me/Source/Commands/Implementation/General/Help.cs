@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using System.Diagnostics;
-using System.ComponentModel.DataAnnotations;
 
 namespace Me;
 
@@ -231,6 +230,31 @@ internal sealed class Help : MeCommandBase
 
     public override void Execute()
     {
+        var rows = new TableRowData[]
+        {
+            new TableRowData(0, "one"), //"this is text for first cell and it is no long but multilined"),
+            new TableRowData(1, "two"), //"short text data"),
+            new TableRowData(2, "three"), //"short text data"),
+            new TableRowData(3, "four"), //"short text data"),
+            new TableRowData(0, "fdaf1241"), //"short text data"),
+            new TableRowData(1, "ff"), //"short text data"),
+            new TableRowData(2, ""), //"short text data"),
+            new TableRowData(3, "fovur"), //"short text data"),
+        };
+        var columns = new string[]
+        {
+            "column1",
+            "column2",
+            "column3",
+            "column4",
+        };
+        //var settings = new TableDisplaySettings()
+        //{
+        //    //ColumnsWidthPrecents = new int[] { 25, 50 },
+        //};
+        Print.Table(new ConsoleTable(columns, rows));
+        return;
+
         if (_passedArguments is null || _passedArguments.Length == 0)
         {
             PrintGlobalHelp();
@@ -264,7 +288,7 @@ internal sealed class Help : MeCommandBase
             var cmd = Librarian.Request(passed);
             if (cmd == null)
             {
-                Log.Error($"Command: {passed} not found");
+                Print.Error($"Command: {passed} not found");
                 continue;
             }
             toPrint.Add(cmd);
@@ -277,7 +301,7 @@ internal sealed class Help : MeCommandBase
         var requestedCommands = Librarian.Request(letter);
         if (requestedCommands is null || requestedCommands.Length == 0)
         {
-            Log.Error($"Commands thas starts with character '{letter}' not found");
+            Print.Error($"Commands thas starts with character '{letter}' not found");
             return;
         }
         PrintCommandHelp(requestedCommands);

@@ -25,6 +25,6 @@ internal sealed class ReleasePipeline : PipelineBase
 
     private void ErrorHandler(string reason)
     {
-        Log.Error(reason);
+        Print.Error(reason);
     }
 }

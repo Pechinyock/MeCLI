@@ -17,28 +17,28 @@ internal sealed class ConsoleLogger : ILogger
 
     public void Trace(string msg)
     {
-        if (!Guard(msg, Verbosity.Trace))
+        if (!IsAllowedToBeLogged(msg, Verbosity.Trace))
             return;
         PrintColored(msg, ConsoleColor.Gray);
     }
 
     public void Info(string msg)
     {
-        if (!Guard(msg, Verbosity.Info))
+        if (!IsAllowedToBeLogged(msg, Verbosity.Info))
             return;
         PrintColored(msg, ConsoleColor.Green);
     }
 
     public void Warn(string msg)
     {
-        if (!Guard(msg, Verbosity.Warn))
+        if (!IsAllowedToBeLogged(msg, Verbosity.Warn))
             return;
         PrintColored(msg, ConsoleColor.Yellow);
     }
 
     public void Error(string msg)
     {
-        if (!Guard(msg, Verbosity.Error))
+        if (!IsAllowedToBeLogged(msg, Verbosity.Error))
             return;
         PrintColored(msg, ConsoleColor.Red);
     }
@@ -51,7 +51,7 @@ internal sealed class ConsoleLogger : ILogger
         Console.ForegroundColor = DEFAULT_COSOLE_TEXT_COLOR;
     }
 
-    private bool Guard(string msg, Verbosity level) 
+    private bool IsAllowedToBeLogged(string msg, Verbosity level) 
     {
         if (!_verbosity.HasFlag(level)) 
             return false;

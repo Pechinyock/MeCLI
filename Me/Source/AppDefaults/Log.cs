@@ -14,13 +14,9 @@ internal abstract class Log
     {
 #if DEBUG
         Debug.Assert(!_isInit, "Log was initialized multiple times!");
-#endif
-
-        _logger = log;
-
-#if DEBUG
         _isInit = true;
 #endif
+        _logger = log;
     }
 
     public static void Trace(string message) => _logger.Trace(message);
