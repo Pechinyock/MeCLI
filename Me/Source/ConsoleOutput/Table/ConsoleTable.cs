@@ -1,20 +1,20 @@
-﻿using System.Diagnostics;
-using System.Text;
+﻿using System.Text;
+using System.Diagnostics;
 
 namespace Me;
 
 public sealed class ConsoleTable
 {
     private const string CUT_OFF_SYMBOLS = "...";
-    private const char EMTY_SYMBOL = ' ';
+    private const char EMPTY_SYMBOL = ' ';
 
     private readonly string[] _columns;
-    private readonly TableRowData[] _rows;
+    private readonly ConsoleTableRow[] _rows;
     private readonly TableDisplaySettings _displaySettings;
     private readonly int[] _columnsWidth;
 
     public ConsoleTable(string[] columns
-        , TableRowData[] rows
+        , ConsoleTableRow[] rows
         , TableDisplaySettings settings = null)
     {
         Debug.Assert(columns is not null);
@@ -42,45 +42,55 @@ public sealed class ConsoleTable
         return sb.ToString();
     }
 
-    private void AppendRow(StringBuilder sb) 
+    private void AppendRow(StringBuilder sb)
     {
-        /* damn this is not so easy as I thought... 
-         * first thing first not enought clarity...
-         * get full row, define cells are filled and
-         * the fill row as it needs to be printed.
-         * if row.Index != i - it is empty row.
-         * and it is only for that case when cell have enough space for text...
-         */
-        for (int i = 0; i < _rows.Length; ++i) 
+        var reservations = new StringBuilder[_columns.Length];
+        foreach (var row in _rows)
         {
-            var columnIndex = _rows[i].Index;
-            Debug.Assert(columnIndex >= 0 && columnIndex < _columns.Length);
-
-            var allowedLenght = _columnsWidth[columnIndex];
-            var cellText = _rows[i].Data;
-            var cellTextLenght = cellText.Length;
-            if (allowedLenght >= cellTextLenght) 
+            for (int i = 0; i < _columns.Length; i++)
             {
+                var cellText = row[i].Text;
+                var allowedLenght = _columnsWidth[i];
+                var cellTextLenght = cellText.Length;
+                var cellTextAlignment = row[i].TextAlignment;
 
-                sb.Append(cellText);
-
-                var spinToCellEnd = allowedLenght - cellText.Length;
-                while (spinToCellEnd > 1) 
+                if (cellTextLenght < allowedLenght - 2)
                 {
-                    sb.Append(EMTY_SYMBOL);
-                    --spinToCellEnd;
+                    AppendCell(sb, cellText, allowedLenght, i, cellTextAlignment);
                 }
-                if(i != _columns.Length - 1)
-                    sb.Append(_displaySettings.ColumnSeporator);
+                else
+                {
+                    var splitPoint = allowedLenght - 3;
+                    var fitsPart = cellText.Substring(0, splitPoint);
+                    AppendCell(sb, fitsPart, allowedLenght, i, cellTextAlignment);
+                    var reservation = new StringBuilder();
+                    reservation.Append(cellText.Substring(splitPoint, cellText.Length - splitPoint));
+                    reservations[i] = reservation;
+                }
             }
 
-            var isRowEnded = i == _columns.Length - 1;
-            if (isRowEnded)
-            {
-                sb.Append(Environment.NewLine);
-                for (int j = 0; j < _columns.Length; ++j)
-                    AppendLine(sb, j, _displaySettings.RowSeporator);
-            }
+            for (int j = 0; j < _columns.Length; ++j)
+                AppendCellWith(sb, j, _displaySettings.RowSeporator, '+');
+        }
+    }
+
+    private void AppendCell(StringBuilder sb
+        , string text
+        , int columnWidth
+        , int columnIndex
+        , TextAlignmentEnum alignment)
+    {
+        switch (alignment)
+        {
+            case TextAlignmentEnum.Left:
+                AppendLeftCell(sb, text, columnWidth, columnIndex);
+                break;
+            case TextAlignmentEnum.Center:
+                AppendCenterCell(sb, text, columnWidth, columnIndex);
+                break;
+            case TextAlignmentEnum.Right:
+                AppendRightCell(sb, text, columnWidth, columnIndex);
+                break;
         }
     }
 
@@ -88,7 +98,7 @@ public sealed class ConsoleTable
     {
         for (int i = 0; i < _columnsWidth.Length; ++i)
         {
-            AppendLine(sb, i, '=');
+            AppendCellWith(sb, i, '=', '=');
         }
         for (int i = 0; i < _columns.Length; ++i)
         {
@@ -98,82 +108,82 @@ public sealed class ConsoleTable
                 ? _columns[i]
                 : CutTitle(i);
 
-            switch (_displaySettings.TitleAlignment) 
+            switch (_displaySettings.TitleAlignment)
             {
-                case TitleAlignmentEnum.Left:
-                    AppendLeftColumnTitle(sb, title, columnWidth, i);
+                case TextAlignmentEnum.Left:
+                    AppendLeftCell(sb, title, columnWidth, i);
                     break;
-                case TitleAlignmentEnum.Center:
-                    AppendCenterColumnTitle(sb, title, columnWidth, i);
+                case TextAlignmentEnum.Center:
+                    AppendCenterCell(sb, title, columnWidth, i);
                     break;
-                case TitleAlignmentEnum.Right:
-                    AppendRightColumnTitle(sb, title, columnWidth, i);
+                case TextAlignmentEnum.Right:
+                    AppendRightCell(sb, title, columnWidth, i);
                     break;
             }
         }
         for (int i = 0; i < _columnsWidth.Length; ++i)
         {
-            AppendLine(sb, i, '=');
+            AppendCellWith(sb, i, '=', '=');
         }
     }
 
-    private void AppendLeftColumnTitle(StringBuilder sb
-        , string title
+    private void AppendLeftCell(StringBuilder sb
+        , string text
         , int columnWidth
-        , int index) 
+        , int index)
     {
-        var charDiff = columnWidth - title.Length;
-        sb.Append(title);
+        var charDiff = columnWidth - text.Length;
+        sb.Append(text);
         while (charDiff > 0)
         {
             if (charDiff == 2)
             {
-                sb.Append(EMTY_SYMBOL);
-                if (index != _columns.Length - 1)
+                sb.Append(EMPTY_SYMBOL);
+                if (!IsLastCell(index))
                     sb.Append(_displaySettings.ColumnSeporator);
                 else
                     sb.Append(Environment.NewLine);
                 break;
             }
-            sb.Append(EMTY_SYMBOL);
+            sb.Append(EMPTY_SYMBOL);
             --charDiff;
         }
     }
 
-    private void AppendCenterColumnTitle(StringBuilder sb
-        , string title
+    private void AppendCenterCell(StringBuilder sb
+        , string text
         , int columnWidth
         , int index)
     {
-        var charDiff = columnWidth - title.Length;
-        int leftSpan = charDiff - (charDiff / 2);
-        int rightSpan = charDiff -leftSpan;
+        var charDiff = columnWidth - text.Length;
+        int rightSpan = charDiff - (charDiff / 2);
+        int leftSpan = charDiff - rightSpan;
 
         Debug.Assert((leftSpan + rightSpan) == charDiff);
 
-        while (leftSpan > 0) 
+        while (leftSpan > 0)
         {
-            sb.Append(EMTY_SYMBOL);
+            sb.Append(EMPTY_SYMBOL);
             --leftSpan;
         }
-        sb.Append(title);
+        sb.Append(text);
         while (rightSpan > 0)
         {
             if (rightSpan == 2)
             {
-                sb.Append(EMTY_SYMBOL);
-                if (index != _columns.Length - 1)
+                sb.Append(EMPTY_SYMBOL);
+                if (!IsLastCell(index))
                     sb.Append(_displaySettings.ColumnSeporator);
                 else
                     sb.Append(Environment.NewLine);
                 break;
             }
-            sb.Append(EMTY_SYMBOL);
+            sb.Append(EMPTY_SYMBOL);
             --rightSpan;
         }
     }
 
-    private void AppendRightColumnTitle(StringBuilder sb
+    private void AppendRightCell(StringBuilder sb
         , string title
         , int columnWidth
         , int index)
@@ -184,13 +194,13 @@ public sealed class ConsoleTable
             if (charDiff == 2)
                 break;
 
-            sb.Append(EMTY_SYMBOL);
+            sb.Append(EMPTY_SYMBOL);
             --charDiff;
         }
 
         sb.Append(title);
-        sb.Append(EMTY_SYMBOL);
-        if (index != _columns.Length - 1)
+        sb.Append(EMPTY_SYMBOL);
+        if (!IsLastCell(index))
             sb.Append(_displaySettings.ColumnSeporator);
         else
             sb.Append(Environment.NewLine);
@@ -199,7 +209,7 @@ public sealed class ConsoleTable
     private string CutTitle(int index)
     {
         Debug.Assert(index >= 0 && index < _columns.Length);
-        var title =  _columns[index];
+        var title = _columns[index];
         /* will cut hardly (coz it is just for debugging) */
         var allowedWidth = _columnsWidth[index] - (CUT_OFF_SYMBOLS.Length + 5);
         var actualWidth = title.Length;
@@ -208,7 +218,10 @@ public sealed class ConsoleTable
         return sb.ToString();
     }
 
-    private void AppendLine(StringBuilder sb, int columnIndex, char caracter)
+    private void AppendCellWith(StringBuilder sb
+        , int columnIndex
+        , char character
+        , char columnSeporator)
     {
         Debug.Assert(sb is not null);
         Debug.Assert(columnIndex >= 0 && columnIndex <= _columnsWidth.Length);
@@ -222,9 +235,19 @@ public sealed class ConsoleTable
                 sb.Append(Environment.NewLine);
                 break;
             }
-            sb.Append(caracter);
+            var toPrint = cellWidth != 1
+                ? character
+                : columnSeporator;
+
+            sb.Append(toPrint);
+
             --cellWidth;
         }
+    }
+
+    private bool IsLastCell(int index)
+    {
+        return (index + 1) % _columnsWidth.Length == 0;
     }
 
     private int[] CalculateColumnsWidth(params int[] precents)

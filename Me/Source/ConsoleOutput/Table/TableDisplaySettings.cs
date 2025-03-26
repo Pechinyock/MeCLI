@@ -1,6 +1,6 @@
 ﻿namespace Me;
 
-public enum TitleAlignmentEnum 
+public enum TextAlignmentEnum 
 {
     Left,
     Center,
@@ -13,5 +13,5 @@ public sealed class TableDisplaySettings
     public bool PrintHeader { get; set; } = true;
     public char ColumnSeporator { get; set; } = '|';
     public char RowSeporator { get; set; } = '-';
-    public TitleAlignmentEnum TitleAlignment { get; set; } = TitleAlignmentEnum.Center;
+    public TextAlignmentEnum TitleAlignment { get; set; } = TextAlignmentEnum.Center;
 }

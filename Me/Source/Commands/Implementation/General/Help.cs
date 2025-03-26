@@ -230,17 +230,24 @@ internal sealed class Help : MeCommandBase
 
     public override void Execute()
     {
-        var rows = new TableRowData[]
+        var nRows = new ConsoleTableRow[]
         {
-            new TableRowData(0, "one"), //"this is text for first cell and it is no long but multilined"),
-            new TableRowData(1, "two"), //"short text data"),
-            new TableRowData(2, "three"), //"short text data"),
-            new TableRowData(3, "four"), //"short text data"),
-            new TableRowData(0, "fdaf1241"), //"short text data"),
-            new TableRowData(1, "ff"), //"short text data"),
-            new TableRowData(2, ""), //"short text data"),
-            new TableRowData(3, "fovur"), //"short text data"),
+            new(new[]
+            {
+                new ConsoleTableCell(0, "12345678901234567890123456789", TextAlignmentEnum.Center),
+                new ConsoleTableCell(1, null),
+                new ConsoleTableCell(2, "three", TextAlignmentEnum.Right),
+                new ConsoleTableCell(3, "four"),
+            }),
+            new(new[]
+            {
+                new ConsoleTableCell(0, "one"),
+                new ConsoleTableCell(1, "two"),
+                new ConsoleTableCell(2, "three", TextAlignmentEnum.Right),
+                new ConsoleTableCell(3, "four", TextAlignmentEnum.Right),
+            }),
         };
+
         var columns = new string[]
         {
             "column1",
@@ -252,7 +259,8 @@ internal sealed class Help : MeCommandBase
         //{
         //    //ColumnsWidthPrecents = new int[] { 25, 50 },
         //};
-        Print.Table(new ConsoleTable(columns, rows));
+
+        Print.Table(new ConsoleTable(columns, nRows));
         return;
 
         if (_passedArguments is null || _passedArguments.Length == 0)
