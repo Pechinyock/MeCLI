@@ -2,7 +2,7 @@
 
 #region Extensions
 
-public static class EnumTypeExtensions
+public static class MeCommandBaseExtensions
 {
     public static bool IsArgumented(this MeCommandBase cmd)
     {
@@ -29,24 +29,16 @@ public static class EnumTypeExtensions
 
 public enum CmdTypeEnumFlag
 {
-    None = 0,
-    Described = 1 << 0,
-    Parzmetrized = 1 << 1,
-    Argumented = 1 << 2,
-    External = 1 << 3,
+    None            = 0,
+    Described       = 1 << 0,
+    Parzmetrized    = 1 << 1,
+    Argumented      = 1 << 2,
+    External        = 1 << 3,
 }
 
 public abstract class MeCommandBase
 {
-    public string[] Input { get; set; }
-
-    public string Arguments { get; protected set; }
-
-    public string Parameters { get; protected set; }
-
     public abstract string Alias { get; }
-
     public abstract CmdTypeEnumFlag GetTypes { get; }
-
     public abstract void Execute();
 }

@@ -13,5 +13,8 @@ public sealed class TableDisplaySettings
     public bool PrintHeader { get; set; } = true;
     public char ColumnSeporator { get; set; } = '|';
     public char RowSeporator { get; set; } = '-';
+    public char CrossColumnRowSeporator { get; set; } = '+';
+    public char HeaderStroke { get; set; } = '=';
+    public char HeaderColumnSeporator { get; set; } = '|';
     public TextAlignmentEnum TitleAlignment { get; set; } = TextAlignmentEnum.Center;
 }

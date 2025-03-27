@@ -8,27 +8,27 @@ public sealed class ConsoleTable
     private const string CUT_OFF_SYMBOLS = "...";
     private const char EMPTY_SYMBOL = ' ';
 
-    private readonly string[] _columns;
+    private readonly string[] _columnsNames;
     private readonly ConsoleTableRow[] _rows;
     private readonly TableDisplaySettings _displaySettings;
     private readonly int[] _columnsWidth;
 
-    public ConsoleTable(string[] columns
+    public ConsoleTable(string[] columnsNames
         , ConsoleTableRow[] rows
         , TableDisplaySettings settings = null)
     {
-        Debug.Assert(columns is not null);
-        Debug.Assert(columns.Length > 0);
+        Debug.Assert(columnsNames is not null);
+        Debug.Assert(columnsNames.Length > 0);
         Debug.Assert(rows is not null);
 
-        _columns = columns;
+        _columnsNames = columnsNames;
         _rows = rows;
 
-        _displaySettings = settings ?? ApplicationDefaults.GetTableDisplaySettings(_columns.Length);
+        _displaySettings = settings ?? ApplicationDefaults.GetTableDisplaySettings(_columnsNames.Length);
 
         _columnsWidth = CalculateColumnsWidth(_displaySettings.ColumnsWidthPrecents);
 
-        Debug.Assert(_columnsWidth.Length == _columns.Length);
+        Debug.Assert(_columnsWidth.Length == _columnsNames.Length);
     }
 
     public override string ToString()
@@ -41,37 +41,174 @@ public sealed class ConsoleTable
 
         return sb.ToString();
     }
-
+    /* [TODO] 
+     * Add new static variable LineBreak => Environment.NewLine
+     * Implement division by line if LineBreak occurs
+     */
     private void AppendRow(StringBuilder sb)
     {
-        var reservations = new StringBuilder[_columns.Length];
-        foreach (var row in _rows)
+        var reservations = new StringBuilder[_columnsNames.Length];
+
+        bool isAppendingReserve = false;
+
+        for (int rowIndex = 0; rowIndex < _rows.Length;)
         {
-            for (int i = 0; i < _columns.Length; i++)
+            var currentRow = _rows[rowIndex];
+
+            for (int cellIndex = 0; cellIndex < _columnsNames.Length && !isAppendingReserve; cellIndex++)
             {
-                var cellText = row[i].Text;
-                var allowedLenght = _columnsWidth[i];
+                var cell = currentRow[cellIndex] ?? new ConsoleTableCell(null);
+                var cellText = cell.Text;
+                var allowedLenght = _columnsWidth[cellIndex];
                 var cellTextLenght = cellText.Length;
-                var cellTextAlignment = row[i].TextAlignment;
+                var cellTextAlignment = cell.TextAlignment;
+
+                //if (cellText.Contains(Environment.NewLine)) 
+                //{
+                //    var newLineCharPos = cellText.IndexOf(Environment.NewLine);
+                //    var newLineCharLenght = Environment.NewLine.Length;
+                //    if (newLineCharPos < allowedLenght - 2)
+                //    {
+                //        var textToAppend = cellText.Substring(0, newLineCharPos);
+                //        AppendCell(sb, textToAppend, allowedLenght, cellIndex, cellTextAlignment);
+
+                //        var textToPrintLater = cellText.Substring(newLineCharPos + newLineCharLenght
+                //            , cellText.Length - newLineCharPos - (newLineCharLenght * 2)
+                //        );
+
+                //        AddReserve(reservations, cellIndex, textToPrintLater);
+                //    }
+                //    else 
+                //    {
+                //        var splitPoint = GetSplitPoint(cellText, allowedLenght);
+                //        var fittingPart = cellText.Substring(0, splitPoint);
+                //        AppendCell(sb, fittingPart, allowedLenght, cellIndex, cellTextAlignment);
+                //        var textToPrintLater = cellText.Substring(splitPoint, cellText.Length - splitPoint);
+                //        AddReserve(reservations, cellIndex, textToPrintLater);
+                //    }
+                //    continue;
+                //}
 
                 if (cellTextLenght < allowedLenght - 2)
                 {
-                    AppendCell(sb, cellText, allowedLenght, i, cellTextAlignment);
+                    AppendCell(sb, cellText, allowedLenght, cellIndex, cellTextAlignment);
                 }
                 else
                 {
-                    var splitPoint = allowedLenght - 3;
-                    var fitsPart = cellText.Substring(0, splitPoint);
-                    AppendCell(sb, fitsPart, allowedLenght, i, cellTextAlignment);
-                    var reservation = new StringBuilder();
-                    reservation.Append(cellText.Substring(splitPoint, cellText.Length - splitPoint));
-                    reservations[i] = reservation;
+                    var splitPoint = GetSplitPoint(cellText, allowedLenght);
+                    var fittingPart = cellText.Substring(0, splitPoint);
+                    AppendCell(sb, fittingPart, allowedLenght, cellIndex, cellTextAlignment);
+                    var textToPrintLater = cellText.Substring(splitPoint, cellText.Length - splitPoint);
+                    AddReserve(reservations, cellIndex, textToPrintLater);
                 }
             }
 
-            for (int j = 0; j < _columns.Length; ++j)
-                AppendCellWith(sb, j, _displaySettings.RowSeporator, '+');
+            var hasReserve = false;
+            foreach (var reservation in reservations)
+            {
+                if (reservation is not null)
+                {
+                    hasReserve = true;
+                    break;
+                }
+            }
+
+            if (hasReserve)
+            {
+                isAppendingReserve = true;
+                for (int reserveIndex = 0; reserveIndex < reservations.Length; ++reserveIndex)
+                {
+                    var reservation = reservations[reserveIndex];
+                    if (reservation is null)
+                    {
+                        AppendCellWith(sb, reserveIndex, EMPTY_SYMBOL, _displaySettings.ColumnSeporator);
+                        continue;
+                    }
+
+                    var cellAlignment = currentRow[reserveIndex].TextAlignment;
+                    var allowedLenght = _columnsWidth[reserveIndex];
+                    var reserveFullText = reservation.ToString();
+
+                    var reserveLenght = reserveFullText.Length;
+
+                    bool itsFit = reserveLenght < allowedLenght;
+
+                    if (itsFit)
+                    {
+                        AppendCell(sb, reserveFullText, allowedLenght, reserveIndex, cellAlignment);
+                        reservations[reserveIndex] = null;
+                        continue;
+                    }
+
+                    //if (reserveFullText.Contains(Environment.NewLine))
+                    //{
+                    //    var newLineCharPos = reserveFullText.IndexOf(Environment.NewLine);
+                    //    var newLineCharLenght = Environment.NewLine.Length;
+                    //    if (newLineCharPos < allowedLenght - 2)
+                    //    {
+                    //        var textToAppend = reserveFullText.Substring(0, newLineCharPos);
+                    //        AppendCell(sb, textToAppend, allowedLenght, reserveIndex, cellAlignment);
+
+                    //        var textWithNewLine = reserveFullText.Substring(newLineCharPos + newLineCharLenght
+                    //            , reserveFullText.Length - newLineCharPos - (newLineCharLenght * 2)
+                    //        );
+                    //        AddReserve(reservations, reserveIndex, textWithNewLine);
+                    //    }
+                    //    else 
+                    //    {
+                    //        var newLinewSplitPoint = GetSplitPoint(reserveFullText, allowedLenght);
+                    //        var partToPrint = reserveFullText.Substring(0, newLinewSplitPoint);
+                    //        AppendCell(sb, partToPrint, allowedLenght, reserveIndex, cellAlignment);
+                    //        var textWithNewLine = reserveFullText.Substring(newLinewSplitPoint, reserveFullText.Length - newLinewSplitPoint);
+                    //        AddReserve(reservations, reserveIndex, textWithNewLine);
+                    //    }
+                    //    continue;
+                    //}
+
+                    var splitPoint = GetSplitPoint(reserveFullText, allowedLenght);
+                    var fittingPart = reserveFullText.Substring(0, splitPoint);
+                    AppendCell(sb, fittingPart, allowedLenght, reserveIndex, cellAlignment);
+                    var textToPrintLater = reserveFullText.Substring(splitPoint, reserveFullText.Length - splitPoint);
+                    AddReserve(reservations, reserveIndex, textToPrintLater);
+                }
+
+                continue;
+            }
+
+            isAppendingReserve = false;
+            for (int cellIndex = 0; cellIndex < _columnsNames.Length; ++cellIndex)
+            {
+                AppendCellWith(sb, cellIndex, _displaySettings.RowSeporator, _displaySettings.CrossColumnRowSeporator);
+            }
+
+            ++rowIndex;
         }
+    }
+
+    private int GetSplitPoint(string fullText, int allowedLenght) 
+    {
+        var outIndex = allowedLenght - 4;
+        while (outIndex != 0) 
+        {
+            var currentCharacter = fullText[outIndex];
+            if (currentCharacter == EMPTY_SYMBOL) 
+            {
+                return outIndex;
+            }
+            --outIndex;
+        }
+        return allowedLenght - 3;
+    }
+
+    private static void AddReserve(StringBuilder[] allReservers, int index, string textToStore) 
+    {
+        var newReserve = new StringBuilder();
+        var savingText = textToStore.StartsWith(EMPTY_SYMBOL)
+            ? textToStore.Substring(1, textToStore.Length - 1)
+            : textToStore;
+
+        newReserve.Append(savingText);
+        allReservers[index] = newReserve;
     }
 
     private void AppendCell(StringBuilder sb
@@ -98,14 +235,14 @@ public sealed class ConsoleTable
     {
         for (int i = 0; i < _columnsWidth.Length; ++i)
         {
-            AppendCellWith(sb, i, '=', '=');
+            AppendCellWith(sb, i, _displaySettings.HeaderStroke, _displaySettings.HeaderStroke);
         }
-        for (int i = 0; i < _columns.Length; ++i)
+        for (int i = 0; i < _columnsNames.Length; ++i)
         {
             var columnWidth = _columnsWidth[i];
 
-            var title = columnWidth >= _columns[i].Length
-                ? _columns[i]
+            var title = columnWidth >= _columnsNames[i].Length
+                ? _columnsNames[i]
                 : CutTitle(i);
 
             switch (_displaySettings.TitleAlignment)
@@ -123,7 +260,7 @@ public sealed class ConsoleTable
         }
         for (int i = 0; i < _columnsWidth.Length; ++i)
         {
-            AppendCellWith(sb, i, '=', '=');
+            AppendCellWith(sb, i, _displaySettings.HeaderStroke, _displaySettings.HeaderStroke);
         }
     }
 
@@ -132,7 +269,8 @@ public sealed class ConsoleTable
         , int columnWidth
         , int index)
     {
-        var charDiff = columnWidth - text.Length;
+        var charDiff = columnWidth - text.Length - 1;
+        sb.Append(EMPTY_SYMBOL);
         sb.Append(text);
         while (charDiff > 0)
         {
@@ -184,11 +322,11 @@ public sealed class ConsoleTable
     }
 
     private void AppendRightCell(StringBuilder sb
-        , string title
+        , string text
         , int columnWidth
         , int index)
     {
-        var charDiff = columnWidth - title.Length;
+        var charDiff = columnWidth - text.Length;
         while (charDiff > 0)
         {
             if (charDiff == 2)
@@ -198,7 +336,7 @@ public sealed class ConsoleTable
             --charDiff;
         }
 
-        sb.Append(title);
+        sb.Append(text);
         sb.Append(EMPTY_SYMBOL);
         if (!IsLastCell(index))
             sb.Append(_displaySettings.ColumnSeporator);
@@ -208,8 +346,8 @@ public sealed class ConsoleTable
 
     private string CutTitle(int index)
     {
-        Debug.Assert(index >= 0 && index < _columns.Length);
-        var title = _columns[index];
+        Debug.Assert(index >= 0 && index < _columnsNames.Length);
+        var title = _columnsNames[index];
         /* will cut hardly (coz it is just for debugging) */
         var allowedWidth = _columnsWidth[index] - (CUT_OFF_SYMBOLS.Length + 5);
         var actualWidth = title.Length;
