@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace Me;
+﻿namespace Me;
 
 internal sealed class Find : StageBase
 {
@@ -25,6 +23,7 @@ internal sealed class Find : StageBase
             OnFailure?.Invoke($"Command: {requestedAlias} not found");
             return false;
         }
+
         _context.SetExecutingCommand(foundCmd);
         return true;
     }

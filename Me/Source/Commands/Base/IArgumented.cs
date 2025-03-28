@@ -1,14 +1,14 @@
 ﻿namespace Me;
 
-internal interface IArgumented
+public interface IArgumented
 {
-    public void SetArguments(string[] value);
+    void SetArguments(string[] value);
 
-    public string[] GetPassedArguments();
+    string[] GetPassedArguments();
 
-    public string GetArgumentIndicator();
+    string GetArgumentIndicator();
 
-    public string[] GetArgsWithdescription();
+    string[] GetArgsWithdescription();
 
-    public Dictionary<string, string> GetAvailableArgs();
+    Dictionary<string, string> GetAvailableArgs();
 }

@@ -44,4 +44,5 @@ internal sealed class Create : MeCommandBase
 
     public string GetDescription() => "Bassicly creates something";
 
+    public override bool Validate() => true;
 }

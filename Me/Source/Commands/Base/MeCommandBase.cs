@@ -23,6 +23,11 @@ public static class MeCommandBaseExtensions
     {
         return cmd.GetTypes.HasFlag(CmdTypeEnumFlag.Described);
     }
+
+    public static bool IsSubcommanded(this MeCommandBase cmd)
+    {
+        return cmd.GetTypes.HasFlag(CmdTypeEnumFlag.Subcommanded);
+    }
 }
 
 #endregion
@@ -34,6 +39,7 @@ public enum CmdTypeEnumFlag
     Parzmetrized    = 1 << 1,
     Argumented      = 1 << 2,
     External        = 1 << 3,
+    Subcommanded    = 1 << 4,
 }
 
 public abstract class MeCommandBase
@@ -41,4 +47,5 @@ public abstract class MeCommandBase
     public abstract string Alias { get; }
     public abstract CmdTypeEnumFlag GetTypes { get; }
     public abstract void Execute();
+    public abstract bool Validate();
 }

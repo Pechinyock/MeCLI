@@ -3,7 +3,6 @@ using Me;
 internal static class EntryPoint
 {
     /* [TODO]
-     * new line feature in a table
      * ISubcommanded interface
      * collapse everyting to application class Mian should loks like App.Run(args);
      */

@@ -35,6 +35,9 @@ public sealed class ConsoleTable
 
     public override string ToString()
     {
+        if (_rows is null || _rows.Length == 0) 
+            return string.Empty;
+
         var sb = new StringBuilder();
         if (_displaySettings.PrintHeader)
             AppendHeader(sb);
@@ -44,10 +47,6 @@ public sealed class ConsoleTable
         return sb.ToString();
     }
 
-    /* [TODO] 
-     * Add new static variable LineBreak => Environment.NewLine
-     * Implement division by line if LineBreak occurs
-     */
     private void AppendRow(StringBuilder sb)
     {
         var reservations = new StringBuilder[_columnsNames.Length];
@@ -137,7 +136,11 @@ public sealed class ConsoleTable
                     var reservation = reservations[reserveIndex];
                     if (reservation is null)
                     {
-                        AppendCellWith(sb, reserveIndex, EMPTY_SYMBOL, _displaySettings.ColumnSeporator);
+                        AppendCellWith(sb
+                            , reserveIndex
+                            , EMPTY_SYMBOL
+                            , _displaySettings.ColumnSeporator
+                        );
                         continue;
                     }
 
@@ -152,12 +155,17 @@ public sealed class ConsoleTable
 
                     if (itsFit && !hasLineBreak)
                     {
-                        AppendCell(sb, reserveFullText, allowedLenght, reserveIndex, cellAlignment);
+                        AppendCell(sb
+                            , reserveFullText
+                            , allowedLenght
+                            , reserveIndex
+                            , cellAlignment
+                        );
                         reservations[reserveIndex] = null;
                         continue;
                     }
 
-                    if (reserveFullText.Contains(LineBreak))
+                    if (hasLineBreak)
                     {
                         var newLineCharPos = reserveFullText.IndexOf(LineBreak);
                         if (newLineCharPos < allowedLenght - 2)
@@ -199,7 +207,11 @@ public sealed class ConsoleTable
             isAppendingReserve = false;
             for (int cellIndex = 0; cellIndex < _columnsNames.Length; ++cellIndex)
             {
-                AppendCellWith(sb, cellIndex, _displaySettings.RowSeporator, _displaySettings.CrossColumnRowSeporator);
+                AppendCellWith(sb
+                    , cellIndex
+                    , _displaySettings.RowSeporator
+                    , _displaySettings.CrossColumnRowSeporator
+                );
             }
 
             ++rowIndex;
@@ -215,7 +227,12 @@ public sealed class ConsoleTable
         , TextAlignmentEnum textAlignment)
     {
         var textToAppend = text.Substring(0, lineBreakIndex);
-        AppendCell(sb, textToAppend, allowedLenght, columnIndex, textAlignment);
+        AppendCell(sb
+            , textToAppend
+            , allowedLenght
+            , columnIndex
+            , textAlignment
+        );
 
         var newLineCharLenght = LineBreak.Length;
 
@@ -234,7 +251,12 @@ public sealed class ConsoleTable
     {
         var splitPoint = GetSplitPoint(text, allowedLenght);
         var fittingPart = text.Substring(0, splitPoint);
-        AppendCell(sb, fittingPart, allowedLenght, columnIndex, cellAlignment);
+        AppendCell(sb
+            , fittingPart
+            , allowedLenght
+            , columnIndex
+            , cellAlignment
+        );
         var textToPrintLater = text.Substring(splitPoint, text.Length - splitPoint);
         AddReserve(reserves, columnIndex, textToPrintLater);
     }
@@ -289,7 +311,11 @@ public sealed class ConsoleTable
     {
         for (int i = 0; i < _columnsWidth.Length; ++i)
         {
-            AppendCellWith(sb, i, _displaySettings.HeaderStroke, _displaySettings.HeaderStroke);
+            AppendCellWith(sb
+                , i
+                , _displaySettings.HeaderStroke
+                , _displaySettings.HeaderStroke
+            );
         }
         for (int i = 0; i < _columnsNames.Length; ++i)
         {
@@ -314,7 +340,11 @@ public sealed class ConsoleTable
         }
         for (int i = 0; i < _columnsWidth.Length; ++i)
         {
-            AppendCellWith(sb, i, _displaySettings.HeaderStroke, _displaySettings.HeaderStroke);
+            AppendCellWith(sb
+                , i
+                , _displaySettings.HeaderStroke
+                , _displaySettings.HeaderStroke
+            );
         }
     }
 

@@ -4,26 +4,100 @@ using System.Diagnostics;
 namespace Me;
 
 internal sealed class Help : MeCommandBase
-                           , IArgumented
+                           , ISubcommanded
                            , IDescribed
 {
-    private string[] _passedArguments;
+    private string[] _passedSubcommands;
 
-    private readonly Dictionary<string, string> _argsWithDescription = new()
+    private readonly Dictionary<string, string> _subcommandsWithDescription = new()
     {
-        { "<command>", "prints specific command help " }
+        { "<any command>", "prints specific command(s) help" },
+        { "<any character>", "prits help for command(s) that starts with passed character(s)"}
     };
 
     public override string Alias => "help";
-    public override CmdTypeEnumFlag GetTypes => CmdTypeEnumFlag.Argumented | CmdTypeEnumFlag.Described;
-    public string GetArgumentIndicator() => "";
-    public void SetArguments(string[] value) => _passedArguments = value;
-    public string[] GetPassedArguments() => _passedArguments;
-    public Dictionary<string, string> GetAvailableArgs() => _argsWithDescription;
-    public string[] GetArgsWithdescription() => CommandsDefaults.GetArgsOrParamsDescriptionDefault(_argsWithDescription, GetArgumentIndicator());
+    public override bool Validate() 
+    {
+        return true;
+    }
+
+    public override CmdTypeEnumFlag GetTypes => CmdTypeEnumFlag.Described | CmdTypeEnumFlag.Subcommanded;
     public string GetDescription() => "Prints information about all available commands";
 
+    public void SetSubcommand(string[] subCommands) => _passedSubcommands = subCommands;
+    public Dictionary<string, string> GetAvailableSubcommands() => _subcommandsWithDescription;
+
     public override void Execute()
+    {
+        /* Print full help */
+        if (_passedSubcommands is null || _passedSubcommands.Length == 0)
+            PrintFullHelp();
+        else
+            PrintWitSubcommands();
+        return;
+    }
+
+    private void PrintWitSubcommands() 
+    {
+        var subCommands = _passedSubcommands;
+        var toPrint = new List<MeCommandBase>(subCommands.Length);
+        var addedAlready = new Dictionary<string, byte>();
+
+        /* [TODO]
+         * bug. I guess if we print a letter with a command that starts with it letter
+         * help will print it twise.
+         */
+        foreach (var sbCmd in subCommands) 
+        {
+            if (sbCmd.Length == 1)
+            {
+                var singleCharWord = sbCmd;
+                if (addedAlready.ContainsKey(singleCharWord))
+                    continue;
+
+                var mentToadd = Librarian.Request(sbCmd[0]);
+                if (mentToadd is null)
+                {
+                    Print.Error($"Couldn't find commands that starts with letter '{sbCmd}'");
+                    continue;
+                }
+
+                foreach (var founded in mentToadd)
+                {
+                    toPrint.Add(founded);
+                }
+                addedAlready.Add(singleCharWord, 0);
+            }
+
+            if (sbCmd.Length > 1)
+            {
+                if (addedAlready.ContainsKey(sbCmd))
+                    continue;
+
+                var mentToAdd = Librarian.Request(sbCmd);
+                if (mentToAdd is null)
+                {
+                    Print.Error($"Couldn't find command:{sbCmd}");
+                    continue;
+                }
+                toPrint.Add(mentToAdd);
+                addedAlready.Add(mentToAdd.Alias, 0);
+            }
+        }
+
+        var cmdArray = toPrint.ToArray();
+        var table = ConstrucTable(cmdArray);
+        Print.Table(table);
+    }
+
+    private void PrintFullHelp() 
+    {
+        var commads = Librarian.RequestAll();
+        var table = ConstrucTable(commads);
+        Print.Table(table);
+    }
+
+    private static ConsoleTable ConstrucTable(MeCommandBase[] cmds)
     {
         var columns = new string[]
         {
@@ -36,77 +110,74 @@ internal sealed class Help : MeCommandBase
         {
             ColumnsWidthPrecents = new[] { 15, 40, 45 }
         };
-        if (_passedArguments is null || _passedArguments.Length == 0)
+
+        var rows = new ConsoleTableRow[cmds.Length];
+
+        for (int rowIndex = 0; rowIndex < rows.Length; ++rowIndex)
         {
-            /* Print full help */
-            var commads = Librarian.RequestAll();
-            var rows = new ConsoleTableRow[commads.Length];
+            var cells = new ConsoleTableCell[3];
+            var cmd = cmds[rowIndex];
+            cells[0] = new ConsoleTableCell(cmds[rowIndex].Alias);
 
-            for (int rowIndex = 0; rowIndex < rows.Length; ++rowIndex)
+            var argsAndParams = ConcatAllInfo(cmd);
+            cells[1] = new ConsoleTableCell(argsAndParams);
+
+            if (cmd.IsDescribed())
             {
-                var cells = new ConsoleTableCell[columns.Length];
-                var cmd = commads[rowIndex];
-                cells[0] = new ConsoleTableCell(commads[rowIndex].Alias);
-
-                if (cmd.IsParametrized() || cmd.IsArgumented())
-                {
-                    var parametrized = cmd as IParametrized;
-                    var argsAndParams = ConcatAllParamsAndArgs(cmd);
-                    cells[1] = new ConsoleTableCell(argsAndParams);
-                }
-
-                if (cmd.IsDescribed()) 
-                {
-                    var described = cmd as IDescribed;
-                    cells[2] = new ConsoleTableCell(described.GetDescription(), TextAlignmentEnum.Center);
-                }
-
-                rows[rowIndex] = new ConsoleTableRow(cells);
+                var described = cmd as IDescribed;
+                cells[2] = new ConsoleTableCell(described.GetDescription(), TextAlignmentEnum.Center);
             }
-            Print.Table(new ConsoleTable(columns, rows, displaySettings));
-            return;
-        }
 
-        //if (_passedArguments.Length == 1 && _passedArguments[0].Length == 1)
-        //{
-        //    /* Print print all cmds that starts with character */
-        //    return;
-        //}
-        //else 
-        //{
-        //    /* print help single coomand */
-        //}
+            rows[rowIndex] = new ConsoleTableRow(cells);
+        }
+        var result = new ConsoleTable(columns, rows, displaySettings);
+        return result;
     }
 
-    private static string ConcatAllParamsAndArgs(MeCommandBase cmd) 
+    private static string ConcatAllInfo(MeCommandBase cmd)
     {
-        Debug.Assert(cmd.IsParametrized() || cmd.IsArgumented());
+        Debug.Assert(cmd.IsParametrized() || cmd.IsArgumented() || cmd.IsSubcommanded());
 
-        var parametrized = cmd as IParametrized;
         var sb = new StringBuilder();
-        if (parametrized is not null) 
+        if (cmd.IsParametrized())
         {
+            var parametrized = cmd as IParametrized;
             var parameters = parametrized.GetAvailableParameters();
             var paramIndicator = parametrized.GetParameterIndicator();
-
-            foreach (var p in parameters)
-            {
-                sb.Append($"{paramIndicator}{p.Key} - {p.Value}{ConsoleTable.LineBreak}");
-            }
+            AppendDictionary(sb, parameters, paramIndicator);
         }
 
-        var argumented = cmd as IArgumented;
-        if (argumented is not null) 
+        if (cmd.IsArgumented())
         {
+            var argumented = cmd as IArgumented;
             var arguments = argumented.GetAvailableArgs();
             var argsIndicator = argumented.GetArgumentIndicator();
+            AppendDictionary(sb, arguments, argsIndicator);
+        }
 
-            foreach (var a in arguments)
-            {
-                sb.Append($"{argsIndicator}{a.Key} - {a.Value}{ConsoleTable.LineBreak}");
-            }
+        if (cmd.IsSubcommanded())
+        {
+            var subcommanded = cmd as ISubcommanded;
+            var subcommands = subcommanded.GetAvailableSubcommands();
+            AppendDictionary(sb, subcommands, "");
         }
 
         return sb.ToString();
+    }
+
+    private static void AppendDictionary(StringBuilder sb, Dictionary<string, string> dict, string indicatior)
+    {
+        if (dict is null || dict.Count == 0)
+            return;
+        int index = 0;
+        foreach (var kvp in dict)
+        {
+            var closeStr = index == dict.Count - 1
+                ? String.Empty
+                : ConsoleTable.LineBreak;
+
+            sb.Append($"{indicatior}{kvp.Key} - {kvp.Value}{closeStr}");
+            index++;
+        }
     }
 }

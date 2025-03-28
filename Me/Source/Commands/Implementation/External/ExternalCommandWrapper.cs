@@ -29,4 +29,6 @@ internal sealed class ExternalCommandWrapper : MeCommandBase
         string output = proc.StandardOutput.ReadToEnd();
         proc.WaitForExit();
     }
+
+    public override bool Validate() => true;
 }

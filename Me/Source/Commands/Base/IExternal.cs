@@ -1,6 +1,6 @@
 ﻿namespace Me;
 
-internal interface IExternal
+public interface IExternal
 {
     void SetArguments(string value);
     void SetProgramName(string value);

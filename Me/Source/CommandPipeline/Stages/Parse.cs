@@ -26,7 +26,18 @@ internal sealed class Parse : StageBase
         if(cmdToParse.IsExternal())
             FillExternal(sourceInput, cmdToParse);
 
+        if (cmdToParse.IsSubcommanded())
+            FillSubcommands(sourceInput, cmdToParse);
+
         return true;
+    }
+
+    private void FillSubcommands(string[] input, MeCommandBase foundedInRegistry) 
+    {
+        var subcommanded = foundedInRegistry as ISubcommanded;
+        Debug.Assert(subcommanded is not null, $"{foundedInRegistry.Alias} marked as subcommanded but doesn't implement {nameof(ISubcommanded)}");
+        var subcommands = GetSubcommands(input);
+        subcommanded.SetSubcommand(subcommands);
     }
 
     private void FillArguments(string[] input, MeCommandBase foundedInRegistry)
@@ -56,11 +67,33 @@ internal sealed class Parse : StageBase
             if (!IsIndicator(currentToken, argIndicator))
                 continue;
 
-
             args.Add(currentToken.Substring(argIndicator.Length));
         }
 
         return args.ToArray();
+    }
+
+    private string[] GetSubcommands(string[] tokens) 
+    {
+        if(tokens.Length <= 1)
+            return null;
+
+        var subcommands = new List<string>(tokens.Length - 1);
+
+        for (int i = 1; i < tokens.Length; ++i) 
+        {
+            if (String.IsNullOrEmpty(tokens[i]))
+                continue;
+
+            var currentToken = tokens[i];
+            var character = currentToken[0];
+            if (!Char.IsLetter(character))
+                continue;
+
+            subcommands.Add(currentToken);
+        }
+
+        return subcommands.ToArray();
     }
 
     private void FillExternal(string[] input, MeCommandBase foundedInRegistry)
