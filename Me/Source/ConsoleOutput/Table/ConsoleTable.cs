@@ -5,6 +5,8 @@ namespace Me;
 
 public sealed class ConsoleTable
 {
+    public static readonly string LineBreak = Environment.NewLine;
+
     private const string CUT_OFF_SYMBOLS = "...";
     private const char EMPTY_SYMBOL = ' ';
 
@@ -41,6 +43,7 @@ public sealed class ConsoleTable
 
         return sb.ToString();
     }
+
     /* [TODO] 
      * Add new static variable LineBreak => Environment.NewLine
      * Implement division by line if LineBreak occurs
@@ -54,6 +57,11 @@ public sealed class ConsoleTable
         for (int rowIndex = 0; rowIndex < _rows.Length;)
         {
             var currentRow = _rows[rowIndex];
+            if (currentRow is null)
+            {
+                ++rowIndex;
+                continue;
+            }
 
             for (int cellIndex = 0; cellIndex < _columnsNames.Length && !isAppendingReserve; cellIndex++)
             {
@@ -63,43 +71,51 @@ public sealed class ConsoleTable
                 var cellTextLenght = cellText.Length;
                 var cellTextAlignment = cell.TextAlignment;
 
-                //if (cellText.Contains(Environment.NewLine)) 
-                //{
-                //    var newLineCharPos = cellText.IndexOf(Environment.NewLine);
-                //    var newLineCharLenght = Environment.NewLine.Length;
-                //    if (newLineCharPos < allowedLenght - 2)
-                //    {
-                //        var textToAppend = cellText.Substring(0, newLineCharPos);
-                //        AppendCell(sb, textToAppend, allowedLenght, cellIndex, cellTextAlignment);
-
-                //        var textToPrintLater = cellText.Substring(newLineCharPos + newLineCharLenght
-                //            , cellText.Length - newLineCharPos - (newLineCharLenght * 2)
-                //        );
-
-                //        AddReserve(reservations, cellIndex, textToPrintLater);
-                //    }
-                //    else 
-                //    {
-                //        var splitPoint = GetSplitPoint(cellText, allowedLenght);
-                //        var fittingPart = cellText.Substring(0, splitPoint);
-                //        AppendCell(sb, fittingPart, allowedLenght, cellIndex, cellTextAlignment);
-                //        var textToPrintLater = cellText.Substring(splitPoint, cellText.Length - splitPoint);
-                //        AddReserve(reservations, cellIndex, textToPrintLater);
-                //    }
-                //    continue;
-                //}
+                if (cellText.Contains(LineBreak))
+                {
+                    var newLineCharPos = cellText.IndexOf(LineBreak);
+                    if (newLineCharPos < allowedLenght - 2)
+                    {
+                        AppendWithLineBreak(sb
+                            , reservations
+                            , cellText
+                            , newLineCharPos
+                            , allowedLenght
+                            , cellIndex
+                            , cellTextAlignment
+                        );
+                    }
+                    else
+                    {
+                        AppendCellAndAddReserve(sb
+                            , reservations
+                            , cellText
+                            , allowedLenght
+                            , cellIndex
+                            , cellTextAlignment
+                        );
+                    }
+                    continue;
+                }
 
                 if (cellTextLenght < allowedLenght - 2)
                 {
-                    AppendCell(sb, cellText, allowedLenght, cellIndex, cellTextAlignment);
+                    AppendCell(sb
+                        , cellText
+                        , allowedLenght
+                        , cellIndex
+                        , cellTextAlignment
+                    );
                 }
                 else
                 {
-                    var splitPoint = GetSplitPoint(cellText, allowedLenght);
-                    var fittingPart = cellText.Substring(0, splitPoint);
-                    AppendCell(sb, fittingPart, allowedLenght, cellIndex, cellTextAlignment);
-                    var textToPrintLater = cellText.Substring(splitPoint, cellText.Length - splitPoint);
-                    AddReserve(reservations, cellIndex, textToPrintLater);
+                    AppendCellAndAddReserve(sb
+                        , reservations
+                        , cellText
+                        , allowedLenght
+                        , cellIndex
+                        , cellTextAlignment
+                    );
                 }
             }
 
@@ -132,44 +148,49 @@ public sealed class ConsoleTable
                     var reserveLenght = reserveFullText.Length;
 
                     bool itsFit = reserveLenght < allowedLenght;
+                    bool hasLineBreak = reserveFullText.Contains(LineBreak);
 
-                    if (itsFit)
+                    if (itsFit && !hasLineBreak)
                     {
                         AppendCell(sb, reserveFullText, allowedLenght, reserveIndex, cellAlignment);
                         reservations[reserveIndex] = null;
                         continue;
                     }
 
-                    //if (reserveFullText.Contains(Environment.NewLine))
-                    //{
-                    //    var newLineCharPos = reserveFullText.IndexOf(Environment.NewLine);
-                    //    var newLineCharLenght = Environment.NewLine.Length;
-                    //    if (newLineCharPos < allowedLenght - 2)
-                    //    {
-                    //        var textToAppend = reserveFullText.Substring(0, newLineCharPos);
-                    //        AppendCell(sb, textToAppend, allowedLenght, reserveIndex, cellAlignment);
+                    if (reserveFullText.Contains(LineBreak))
+                    {
+                        var newLineCharPos = reserveFullText.IndexOf(LineBreak);
+                        if (newLineCharPos < allowedLenght - 2)
+                        {
+                            AppendWithLineBreak(sb
+                                , reservations
+                                , reserveFullText
+                                , newLineCharPos
+                                , allowedLenght
+                                , reserveIndex
+                                , cellAlignment
+                            );
+                        }
+                        else
+                        {
+                            AppendCellAndAddReserve(sb
+                                , reservations
+                                , reserveFullText
+                                , allowedLenght
+                                , reserveIndex
+                                , cellAlignment
+                            );
+                        }
+                        continue;
+                    }
 
-                    //        var textWithNewLine = reserveFullText.Substring(newLineCharPos + newLineCharLenght
-                    //            , reserveFullText.Length - newLineCharPos - (newLineCharLenght * 2)
-                    //        );
-                    //        AddReserve(reservations, reserveIndex, textWithNewLine);
-                    //    }
-                    //    else 
-                    //    {
-                    //        var newLinewSplitPoint = GetSplitPoint(reserveFullText, allowedLenght);
-                    //        var partToPrint = reserveFullText.Substring(0, newLinewSplitPoint);
-                    //        AppendCell(sb, partToPrint, allowedLenght, reserveIndex, cellAlignment);
-                    //        var textWithNewLine = reserveFullText.Substring(newLinewSplitPoint, reserveFullText.Length - newLinewSplitPoint);
-                    //        AddReserve(reservations, reserveIndex, textWithNewLine);
-                    //    }
-                    //    continue;
-                    //}
-
-                    var splitPoint = GetSplitPoint(reserveFullText, allowedLenght);
-                    var fittingPart = reserveFullText.Substring(0, splitPoint);
-                    AppendCell(sb, fittingPart, allowedLenght, reserveIndex, cellAlignment);
-                    var textToPrintLater = reserveFullText.Substring(splitPoint, reserveFullText.Length - splitPoint);
-                    AddReserve(reservations, reserveIndex, textToPrintLater);
+                    AppendCellAndAddReserve(sb
+                        , reservations
+                        , reserveFullText
+                        , allowedLenght
+                        , reserveIndex
+                        , cellAlignment
+                    );
                 }
 
                 continue;
@@ -185,13 +206,46 @@ public sealed class ConsoleTable
         }
     }
 
-    private int GetSplitPoint(string fullText, int allowedLenght) 
+    private void AppendWithLineBreak(StringBuilder sb
+        , StringBuilder[] reservers
+        , string text
+        , int lineBreakIndex
+        , int allowedLenght
+        , int columnIndex
+        , TextAlignmentEnum textAlignment)
+    {
+        var textToAppend = text.Substring(0, lineBreakIndex);
+        AppendCell(sb, textToAppend, allowedLenght, columnIndex, textAlignment);
+
+        var newLineCharLenght = LineBreak.Length;
+
+        var textWithNewLine = text.Substring(lineBreakIndex + newLineCharLenght
+            , text.Length - lineBreakIndex - newLineCharLenght
+        );
+        AddReserve(reservers, columnIndex, textWithNewLine);
+    }
+
+    private void AppendCellAndAddReserve(StringBuilder sb
+        , StringBuilder[] reserves
+        , string text
+        , int allowedLenght
+        , int columnIndex
+        , TextAlignmentEnum cellAlignment)
+    {
+        var splitPoint = GetSplitPoint(text, allowedLenght);
+        var fittingPart = text.Substring(0, splitPoint);
+        AppendCell(sb, fittingPart, allowedLenght, columnIndex, cellAlignment);
+        var textToPrintLater = text.Substring(splitPoint, text.Length - splitPoint);
+        AddReserve(reserves, columnIndex, textToPrintLater);
+    }
+
+    private int GetSplitPoint(string fullText, int allowedLenght)
     {
         var outIndex = allowedLenght - 4;
-        while (outIndex != 0) 
+        while (outIndex != 0)
         {
             var currentCharacter = fullText[outIndex];
-            if (currentCharacter == EMPTY_SYMBOL) 
+            if (currentCharacter == EMPTY_SYMBOL)
             {
                 return outIndex;
             }
@@ -200,7 +254,7 @@ public sealed class ConsoleTable
         return allowedLenght - 3;
     }
 
-    private static void AddReserve(StringBuilder[] allReservers, int index, string textToStore) 
+    private static void AddReserve(StringBuilder[] allReservers, int index, string textToStore)
     {
         var newReserve = new StringBuilder();
         var savingText = textToStore.StartsWith(EMPTY_SYMBOL)

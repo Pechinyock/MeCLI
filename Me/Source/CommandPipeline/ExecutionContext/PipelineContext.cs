@@ -10,6 +10,8 @@ internal sealed class PipelineContext : IPipelineContext
 
     public PipelineContext(string[] input)
     {
+        if (input is null && input.Length == 0)
+            Print.Error("Couldn't execute empty command");
         _sourceInput = input;
     }
     public MeCommandBase GetExecutingCommand() => _executingCommand;

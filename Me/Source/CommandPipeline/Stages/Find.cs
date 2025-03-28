@@ -10,11 +10,17 @@ internal sealed class Find : StageBase
 
     public override bool Proceed()
     {
-        var sourceString = _context.GetSourceInput();
-        var requestedAlias = sourceString[0];
+        var sourceInput = _context.GetSourceInput();
+        if (sourceInput is null || sourceInput.Length == 0) 
+        {
+            OnFailure?.Invoke($"Command can not be empty");
+            return false;
+        }
+
+        var requestedAlias = sourceInput[0];
         var foundCmd = Librarian.Request(requestedAlias);
 
-        if (foundCmd is null) 
+        if (foundCmd is null)
         {
             OnFailure?.Invoke($"Command: {requestedAlias} not found");
             return false;

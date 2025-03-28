@@ -40,15 +40,15 @@ internal sealed class Help : MeCommandBase
         {
             /* Print full help */
             var commads = Librarian.RequestAll();
-            var rows = new ConsoleTableRow[commads.Length + 1];
+            var rows = new ConsoleTableRow[commads.Length];
 
-            for (int rowIndex = 0; rowIndex < rows.Length - 1; ++rowIndex)
+            for (int rowIndex = 0; rowIndex < rows.Length; ++rowIndex)
             {
                 var cells = new ConsoleTableCell[columns.Length];
                 var cmd = commads[rowIndex];
                 cells[0] = new ConsoleTableCell(commads[rowIndex].Alias);
 
-                if (cmd.IsParametrized())
+                if (cmd.IsParametrized() || cmd.IsArgumented())
                 {
                     var parametrized = cmd as IParametrized;
                     var argsAndParams = ConcatAllParamsAndArgs(cmd);
@@ -58,20 +58,15 @@ internal sealed class Help : MeCommandBase
                 if (cmd.IsDescribed()) 
                 {
                     var described = cmd as IDescribed;
-                    cells[2] = new ConsoleTableCell(described.GetDescription());
+                    cells[2] = new ConsoleTableCell(described.GetDescription(), TextAlignmentEnum.Center);
                 }
 
                 rows[rowIndex] = new ConsoleTableRow(cells);
             }
-            rows[rows.Length - 1] = new ConsoleTableRow(new ConsoleTableCell[]
-            {
-                new ConsoleTableCell("this is quiet long text bassicly withou any new line devisions and it should be printed normaly withou any issues"),
-                new ConsoleTableCell($"this text contains new lines for exaple here and here a line to be printed after"),
-                new ConsoleTableCell("test")
-            });
             Print.Table(new ConsoleTable(columns, rows, displaySettings));
             return;
         }
+
         //if (_passedArguments.Length == 1 && _passedArguments[0].Length == 1)
         //{
         //    /* Print print all cmds that starts with character */
@@ -88,21 +83,28 @@ internal sealed class Help : MeCommandBase
         Debug.Assert(cmd.IsParametrized() || cmd.IsArgumented());
 
         var parametrized = cmd as IParametrized;
-        var parameters = parametrized.GetAvailableParameters();
-        var paramIndicator = parametrized.GetParameterIndicator();
         var sb = new StringBuilder();
-        /*[TODO] add new line at the end of p*/
-        foreach (var p in parameters)
+        if (parametrized is not null) 
         {
-            sb.Append($"{paramIndicator}{p.Key} - {p.Value}");
+            var parameters = parametrized.GetAvailableParameters();
+            var paramIndicator = parametrized.GetParameterIndicator();
+
+            foreach (var p in parameters)
+            {
+                sb.Append($"{paramIndicator}{p.Key} - {p.Value}{ConsoleTable.LineBreak}");
+            }
         }
+
         var argumented = cmd as IArgumented;
-        var arguments = argumented.GetAvailableArgs();
-        var argsIndicator = argumented.GetArgumentIndicator();
-        /*[TODO] add new line at the end of a*/
-        foreach (var a in arguments) 
+        if (argumented is not null) 
         {
-            sb.Append($"{argsIndicator}{a.Key} - {a.Value}");
+            var arguments = argumented.GetAvailableArgs();
+            var argsIndicator = argumented.GetArgumentIndicator();
+
+            foreach (var a in arguments)
+            {
+                sb.Append($"{argsIndicator}{a.Key} - {a.Value}{ConsoleTable.LineBreak}");
+            }
         }
 
         return sb.ToString();
