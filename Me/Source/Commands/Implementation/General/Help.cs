@@ -29,7 +29,6 @@ internal sealed class Help : MeCommandBase
 
     public override void Execute()
     {
-        /* Print full help */
         if (_passedSubcommands is null || _passedSubcommands.Length == 0)
             PrintFullHelp();
         else
@@ -40,20 +39,13 @@ internal sealed class Help : MeCommandBase
     private void PrintWitSubcommands() 
     {
         var subCommands = _passedSubcommands;
-        var toPrint = new List<MeCommandBase>(subCommands.Length);
-        var addedAlready = new Dictionary<string, byte>();
+        var addedDict = new Dictionary<string, MeCommandBase>();
 
-        /* [TODO]
-         * bug. I guess if we print a letter with a command that starts with it letter
-         * help will print it twise.
-         */
         foreach (var sbCmd in subCommands) 
         {
             if (sbCmd.Length == 1)
             {
                 var singleCharWord = sbCmd;
-                if (addedAlready.ContainsKey(singleCharWord))
-                    continue;
 
                 var mentToadd = Librarian.Request(sbCmd[0]);
                 if (mentToadd is null)
@@ -64,14 +56,16 @@ internal sealed class Help : MeCommandBase
 
                 foreach (var founded in mentToadd)
                 {
-                    toPrint.Add(founded);
+                    if (addedDict.ContainsKey(singleCharWord))
+                        continue;
+
+                    addedDict.Add(founded.Alias, founded);
                 }
-                addedAlready.Add(singleCharWord, 0);
             }
 
             if (sbCmd.Length > 1)
             {
-                if (addedAlready.ContainsKey(sbCmd))
+                if (addedDict.ContainsKey(sbCmd))
                     continue;
 
                 var mentToAdd = Librarian.Request(sbCmd);
@@ -80,12 +74,13 @@ internal sealed class Help : MeCommandBase
                     Print.Error($"Couldn't find command:{sbCmd}");
                     continue;
                 }
-                toPrint.Add(mentToAdd);
-                addedAlready.Add(mentToAdd.Alias, 0);
+
+                if(!addedDict.ContainsKey(sbCmd))
+                    addedDict.Add(mentToAdd.Alias, mentToAdd);
             }
         }
 
-        var cmdArray = toPrint.ToArray();
+        var cmdArray = addedDict.Values.ToArray();
         var table = ConstrucTable(cmdArray);
         Print.Table(table);
     }
