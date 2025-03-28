@@ -139,14 +139,16 @@ internal sealed class Help : MeCommandBase
             var parameters = parametrized.GetAvailableParameters();
             var paramIndicator = parametrized.GetParameterIndicator();
             AppendDictionary(sb, parameters, paramIndicator);
+            sb.Append(ConsoleTable.LineBreak);
         }
-
+        
         if (cmd.IsArgumented())
         {
             var argumented = cmd as IArgumented;
             var arguments = argumented.GetAvailableArgs();
             var argsIndicator = argumented.GetArgumentIndicator();
             AppendDictionary(sb, arguments, argsIndicator);
+            sb.Append(ConsoleTable.LineBreak);
         }
 
         if (cmd.IsSubcommanded())
@@ -154,6 +156,7 @@ internal sealed class Help : MeCommandBase
             var subcommanded = cmd as ISubcommanded;
             var subcommands = subcommanded.GetAvailableSubcommands();
             AppendDictionary(sb, subcommands, "");
+            sb.Append(ConsoleTable.LineBreak);
         }
 
         return sb.ToString();
@@ -163,6 +166,7 @@ internal sealed class Help : MeCommandBase
     {
         if (dict is null || dict.Count == 0)
             return;
+
         int index = 0;
         foreach (var kvp in dict)
         {

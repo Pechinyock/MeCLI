@@ -12,7 +12,9 @@ internal sealed class Create : MeCommandBase
 
     private static readonly Dictionary<string, string> _paramsWithDescription = new() 
     {
-        { "template", "create someting from template" }
+        { "type", "specify type of creating thing. 'project / template etc..."},
+        { "name", "specify name of creating thing."},
+        { "template", "create someting from template" },
     };
 
     private string[] _passedArguments;
@@ -20,15 +22,9 @@ internal sealed class Create : MeCommandBase
     private Dictionary<string, string> _passedParameters;
 
     public override string Alias => "create";
-
-    public override CmdTypeEnumFlag GetTypes => CmdTypeEnumFlag.Argumented 
+    public override CmdTypeEnumFlag GetTypes => CmdTypeEnumFlag.Argumented
                                               | CmdTypeEnumFlag.Parzmetrized
                                               | CmdTypeEnumFlag.Described;
-
-    public override void Execute()
-    {
-        int i = 0;
-    }
 
     public void SetArguments(string[] value) => _passedArguments = value;
     public string[] GetPassedArguments() => _passedArguments;
@@ -43,6 +39,41 @@ internal sealed class Create : MeCommandBase
     public Dictionary<string, string> GetPassedParameters() => _passedParameters;
 
     public string GetDescription() => "Bassicly creates something";
+    public override bool Validate() 
+    {
+        if (!IsArgsSpecified() && !IsParamsSpecified())
+            return true;
 
-    public override bool Validate() => true;
+        foreach (var arg in _passedArguments)
+        {
+            if (!_argsWithDescription.ContainsKey(arg))
+            {
+                Print.Error($"Unknown argument: {GetArgumentIndicator()}{arg}");
+                return false;
+            }
+        }
+
+        foreach (var param in _passedParameters) 
+        {
+            if (!_paramsWithDescription.ContainsKey(param.Key)) 
+            {
+                Print.Error($"Unknown parameter: {GetParameterIndicator()}{param.Key}");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public override void Execute()
+    {
+        if (!IsArgsSpecified() && !IsParamsSpecified())
+        {
+            CommandsDefaults.RedirectToHelp(Alias);
+            return;
+        }
+    }
+
+    private bool IsArgsSpecified() => _passedArguments is not null && _passedArguments.Length != 0;
+    private bool IsParamsSpecified() => _passedParameters is not null && _passedParameters.Count != 0;
 }

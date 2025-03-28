@@ -33,6 +33,8 @@ internal static class CommandsDefaults
         Debug.Assert(alias is not null);
         Debug.Assert(Librarian.Request(alias) is not null);
 
+        Print.Warn($"Can't execute '{alias}' withou parameters\\argunent. Redirecting to help...");
+
         var redirectTo = new Help();
         var subCommand = new string[] { alias };
         var subcommanded = redirectTo as ISubcommanded;

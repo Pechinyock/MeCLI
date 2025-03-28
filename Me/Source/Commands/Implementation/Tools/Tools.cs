@@ -5,7 +5,7 @@ internal sealed class Tools : MeCommandBase
                             , IArgumented
                             , IDescribed
 {
-    private string[] _pasedArguments;
+    private string[] _passedArguments;
     private static readonly string _defaultInstallChecker = "--version";
 
 
@@ -27,8 +27,8 @@ internal sealed class Tools : MeCommandBase
     public override string Alias => "tools";
     public override CmdTypeEnumFlag GetTypes => CmdTypeEnumFlag.Described | CmdTypeEnumFlag.Argumented;
     public string GetDescription() => "Set of external tools that required for develop with 'Me'";
-    public void SetArguments(string[] value) => _pasedArguments = value;
-    public string[] GetPassedArguments() => _pasedArguments;
+    public void SetArguments(string[] value) => _passedArguments = value;
+    public string[] GetPassedArguments() => _passedArguments;
     public string GetArgumentIndicator() => CommandsDefaults.ARGS_INDICATOR;
     public string[] GetArgsWithdescription() => CommandsDefaults.GetArgsOrParamsDescriptionDefault(_argsWithDescription, GetArgumentIndicator());
     public Dictionary<string, string> GetAvailableArgs() => _argsWithDescription;
@@ -49,10 +49,10 @@ internal sealed class Tools : MeCommandBase
 
     public override bool Validate() 
     {
-        if(_pasedArguments is null || _pasedArguments.Length == 0)
+        if(_passedArguments is null || _passedArguments.Length == 0)
             return true;
 
-        foreach (var arg in _pasedArguments) 
+        foreach (var arg in _passedArguments) 
         {
             if (!_argsWithDescription.ContainsKey(arg))
             {
@@ -66,13 +66,13 @@ internal sealed class Tools : MeCommandBase
 
     public override void Execute()
     {
-        if (_pasedArguments is null || _pasedArguments.Length == 0) 
+        if (_passedArguments is null || _passedArguments.Length == 0) 
         {
-            Print.Warn("Can't execute 'tools' withou parameters\\argunent. Redirecting to help...");
             CommandsDefaults.RedirectToHelp(Alias);
             return;
         }
-        foreach (var arg in _pasedArguments) 
+
+        foreach (var arg in _passedArguments) 
         {
             var action = _argActionMap[arg];
 
