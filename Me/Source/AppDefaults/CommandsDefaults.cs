@@ -27,4 +27,19 @@ internal static class CommandsDefaults
         }
         return result;
     }
+
+    public static void RedirectToHelp(string alias) 
+    {
+        Debug.Assert(alias is not null);
+        Debug.Assert(Librarian.Request(alias) is not null);
+
+        var redirectTo = new Help();
+        var subCommand = new string[] { alias };
+        var subcommanded = redirectTo as ISubcommanded;
+
+        Debug.Assert(subcommanded != null);
+
+        subcommanded.SetSubcommand(subCommand);
+        redirectTo.Execute();
+    }
 }

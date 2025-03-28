@@ -13,6 +13,8 @@ internal sealed class ExternalCommandWrapper : MeCommandBase
 
     private string _arguments;
     private string _programName;
+    private bool _isDone = false;
+    private string _resultOutput;
 
     public override void Execute()
     {
@@ -24,11 +26,25 @@ internal sealed class ExternalCommandWrapper : MeCommandBase
             RedirectStandardError = true,
             RedirectStandardOutput = true,
         };
-
-        var proc = Process.Start(processStartInfo);
-        string output = proc.StandardOutput.ReadToEnd();
-        proc.WaitForExit();
+        try
+        {
+            var proc = Process.Start(processStartInfo);
+            _resultOutput = proc.StandardOutput.ReadToEnd();
+            proc.WaitForExit();
+            _isDone = true;
+        }
+        catch (Exception ex)
+        {
+            var c = ex;
+            _isDone = true;
+            _resultOutput = "error";
+        }
+        
     }
 
     public override bool Validate() => true;
+
+    public string GetOutputRestlt() => _resultOutput;
+
+    public bool IsCommandDone() => _isDone;
 }
