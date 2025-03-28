@@ -33,7 +33,6 @@ internal sealed class Help : MeCommandBase
             PrintFullHelp();
         else
             PrintWitSubcommands();
-        return;
     }
 
     private void PrintWitSubcommands() 
@@ -56,7 +55,7 @@ internal sealed class Help : MeCommandBase
 
                 foreach (var founded in mentToadd)
                 {
-                    if (addedDict.ContainsKey(singleCharWord))
+                    if (addedDict.ContainsKey(founded.Alias))
                         continue;
 
                     addedDict.Add(founded.Alias, founded);
@@ -75,7 +74,7 @@ internal sealed class Help : MeCommandBase
                     continue;
                 }
 
-                if(!addedDict.ContainsKey(sbCmd))
+                if(!addedDict.ContainsKey(mentToAdd.Alias))
                     addedDict.Add(mentToAdd.Alias, mentToAdd);
             }
         }
