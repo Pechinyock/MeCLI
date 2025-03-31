@@ -5,6 +5,11 @@ internal static class EntryPoint
     /* [TODO]
      * ISubcommanded interface
      * collapse everyting to application class Mian should loks like App.Run(args);
+     * inside App class specifying special things for OS linux\windows:
+     *  - condidtional compilation:
+     *       -- split configuration(Debug-windows, Deubg-linux, Release-windows, Release-lnux);
+     *       -- IFileSystem is a first that should be splidet by this condidonal compilation;
+     *       -- Wrap IFileSystem with Lazy;
      */
 
     public static void Main(string[] args)

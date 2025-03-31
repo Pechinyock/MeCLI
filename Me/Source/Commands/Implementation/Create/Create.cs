@@ -5,16 +5,52 @@ internal sealed class Create : MeCommandBase
                              , IParametrized
                              , IDescribed
 {
-    private static readonly Dictionary<string, string> _argsWithDescription = new()
+    private static readonly string[] _argsNames = new string[]
     {
-        { "list", "list all of things that could be created"}
+        "list"
     };
 
-    private static readonly Dictionary<string, string> _paramsWithDescription = new() 
+    private static readonly Dictionary<string, string> _argsWithDescription = new()
     {
-        { "type", "specify type of creating thing. 'project / template etc..."},
-        { "name", "specify name of creating thing."},
-        { "template", "create someting from template" },
+        { /* list */ _argsNames[0], "list all of things that could be created" }
+    };
+
+    private static readonly Dictionary<string, Action> _argsActions = new()
+    {
+        { /* list */ _argsNames[0], CreateList.Do }
+    };
+
+    private static readonly string[] _requiredParams = new string[]
+    {
+        "type",
+        "name",
+        "language"
+    };
+
+    private static readonly string[] _optionalParams = new string[]
+    {
+        "tempate",
+        "mode"
+    };
+
+    private static readonly Dictionary<string, string> _paramsWithDescription = new()
+    {
+        { /* type */ _requiredParams[0], "specify type of creating thing. project / template etc..." },
+        { /* name */ _requiredParams[1], "specify name of creating thing." },
+        { /* language */ _requiredParams[2], "specifing using programming language"},
+        { /* template */ _optionalParams[0], "create someting from template" },
+        { /* mode */ _optionalParams[1], $"specufying creating mode: immediately or step-by-step. Default is: immediately"}
+    };
+
+    internal static readonly string[] AvailableTypesToCreate = new string[]
+    {
+        "project", "template"
+    };
+
+    private static readonly Dictionary<string, Action<Dictionary<string, string>>> _paramActions = new() 
+    {
+        { /* projcet */ AvailableTypesToCreate[0], CreateProject.Do },
+        { /* template */ AvailableTypesToCreate[1], CreateTemplate.Do },
     };
 
     private string[] _passedArguments;
@@ -39,10 +75,23 @@ internal sealed class Create : MeCommandBase
     public Dictionary<string, string> GetPassedParameters() => _passedParameters;
 
     public string GetDescription() => "Bassicly creates something";
-    public override bool Validate() 
+
+    public override bool Validate()
     {
         if (!IsArgsSpecified() && !IsParamsSpecified())
             return true;
+
+        if (_passedArguments.Length > 1)
+        {
+            Print.Error("Too many arguments");
+            return false;
+        }
+
+        if (_passedParameters.Count > 0 && _passedArguments.Length > 0)
+        {
+            Print.Error("You can't specify parameters and arguments at the same time!");
+            return false;
+        }
 
         foreach (var arg in _passedArguments)
         {
@@ -53,13 +102,33 @@ internal sealed class Create : MeCommandBase
             }
         }
 
-        foreach (var param in _passedParameters) 
+        foreach (var param in _passedParameters)
         {
-            if (!_paramsWithDescription.ContainsKey(param.Key)) 
+            if (!_paramsWithDescription.ContainsKey(param.Key))
             {
                 Print.Error($"Unknown parameter: {GetParameterIndicator()}{param.Key}");
                 return false;
             }
+
+            foreach (var required in _requiredParams)
+            {
+                if (!_passedParameters.ContainsKey(required))
+                {
+                    Print.Error($"You have to specify required parameter: {GetParameterIndicator()}{required}");
+                    return false;
+                }
+            }
+        }
+
+        var typeParameter = _passedParameters[/* type */_requiredParams[0]];
+        if (!AvailableTypesToCreate.Contains(typeParameter))
+        {
+            Print.Error($"Unknown type: {typeParameter}");
+            Print.Warn($"Here the list of things that you can create with 'me' <3");
+            var redirectToList = new Create();
+            redirectToList._passedArguments = new string[]{ /* list */_argsNames[0] };
+            redirectToList.Execute();
+            return false;
         }
 
         return true;
@@ -71,6 +140,19 @@ internal sealed class Create : MeCommandBase
         {
             CommandsDefaults.RedirectToHelp(Alias);
             return;
+        }
+
+        if (IsArgsSpecified()) 
+        {
+            var arg = _passedArguments[0];
+            if (arg is not null)
+                _argsActions[arg].Invoke();
+        }
+        if (IsParamsSpecified()) 
+        {
+            var parameters = _passedParameters;
+            var creatingThingType = _passedParameters[/* type */_requiredParams[0]];
+            _paramActions[creatingThingType].Invoke(_passedParameters);
         }
     }
 
