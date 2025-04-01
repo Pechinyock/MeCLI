@@ -170,11 +170,7 @@ internal sealed class Help : MeCommandBase
         int index = 0;
         foreach (var kvp in dict)
         {
-            var closeStr = index == dict.Count - 1
-                ? String.Empty
-                : ConsoleTable.LineBreak;
-
-            sb.Append($"{indicatior}{kvp.Key} - {kvp.Value}{closeStr}");
+            sb.Append($"{indicatior}{kvp.Key} - {kvp.Value}{ConsoleTable.LineBreak}");
             index++;
         }
     }

@@ -5,7 +5,6 @@ internal static class CreateList
     private static readonly Dictionary<string, string> _availableToCreate = new()
     {
         { /* project */  Create.AvailableTypesToCreate[0], "creates new project" },
-        { /* template */ Create.AvailableTypesToCreate[1], "creates new template" }
     };
 
     public static void Do() 

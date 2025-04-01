@@ -50,7 +50,6 @@ internal sealed class Create : MeCommandBase
     private static readonly Dictionary<string, Action<Dictionary<string, string>>> _paramActions = new() 
     {
         { /* projcet */ AvailableTypesToCreate[0], CreateProject.Do },
-        { /* template */ AvailableTypesToCreate[1], CreateTemplate.Do },
     };
 
     private string[] _passedArguments;
@@ -118,18 +117,20 @@ internal sealed class Create : MeCommandBase
                     return false;
                 }
             }
+
+            var typeParameter = _passedParameters[/* type */_requiredParams[0]];
+            if (!AvailableTypesToCreate.Contains(typeParameter))
+            {
+                Print.Error($"Unknown type: {typeParameter}");
+                Print.Warn($"Here the list of things that you can create with 'me' <3");
+                var redirectToList = new Create();
+                redirectToList._passedArguments = new string[] { /* list */_argsNames[0] };
+                redirectToList.Execute();
+                return false;
+            }
         }
 
-        var typeParameter = _passedParameters[/* type */_requiredParams[0]];
-        if (!AvailableTypesToCreate.Contains(typeParameter))
-        {
-            Print.Error($"Unknown type: {typeParameter}");
-            Print.Warn($"Here the list of things that you can create with 'me' <3");
-            var redirectToList = new Create();
-            redirectToList._passedArguments = new string[]{ /* list */_argsNames[0] };
-            redirectToList.Execute();
-            return false;
-        }
+
 
         return true;
     }

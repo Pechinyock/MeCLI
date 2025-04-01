@@ -1,6 +1,6 @@
 ﻿namespace Me;
 
-public interface IFileSystem
+public interface IFilesManager
 {
     void Create(string path, string fileName);
     bool IsExists(string path);

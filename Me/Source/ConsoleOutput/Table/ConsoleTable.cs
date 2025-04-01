@@ -5,7 +5,7 @@ namespace Me;
 
 public sealed class ConsoleTable
 {
-    public static readonly string LineBreak = Environment.NewLine;
+    public static readonly char LineBreak = '\n';
 
     private const string CUT_OFF_SYMBOLS = "...";
     private const char EMPTY_SYMBOL = ' ';
@@ -234,7 +234,7 @@ public sealed class ConsoleTable
             , textAlignment
         );
 
-        var newLineCharLenght = LineBreak.Length;
+        var newLineCharLenght = 1;
 
         var textWithNewLine = text.Substring(lineBreakIndex + newLineCharLenght
             , text.Length - lineBreakIndex - newLineCharLenght

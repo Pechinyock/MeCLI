@@ -1,9 +1,9 @@
-﻿using System.Diagnostics;
-using System.Text;
+﻿using System.Text;
+using System.Diagnostics;
 
 namespace Me;
 
-internal static class CreateTemplate
+internal static class CreateApplication
 {
     public static void Do(Dictionary<string, string> parameters) 
     {
@@ -12,8 +12,8 @@ internal static class CreateTemplate
 
         var sb = new StringBuilder();
 
-        Print.Info("ment to create template with parameters:");
-        foreach (var p in parameters)
+        Print.Info("ment to create project with parameters:");
+        foreach (var p in parameters) 
         {
             sb.AppendLine($"{p.Key} - {p.Value}");
         }
