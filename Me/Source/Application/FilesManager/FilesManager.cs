@@ -6,6 +6,9 @@ internal class FilesManager : IFilesManager
     {
         try
         {
+            if(Path.Exists(path))
+                return IOResultEnum.AlreadyExist;
+
             Directory.CreateDirectory(path);
             return IOResultEnum.Success;
         }

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Me;
 
@@ -33,7 +34,7 @@ public sealed class InteractivePannel
         printer.Print(_operation.Title);
         foreach (var row in _rows)
         {
-            printer.Print($"{tab}row");
+            printer.Print($"{tab}{row}");
         }
 
         var positionTop = printer.GetCurrentTopPossition();
@@ -42,6 +43,12 @@ public sealed class InteractivePannel
         {
             var rowIndex = positionTop - _rows.Length + index;
             printer.ChangeWirittenRowText($"{arrow} {text}", rowIndex, ConsoleColor.Yellow);
+        };
+
+        _operation.OnStepByStepWaited += () =>
+        {
+            printer.ChangeWirittenRowText($"Press enter to continue", positionTop, ConsoleColor.Yellow);
+            Console.ReadLine();
         };
 
         _operation.OnStepCompleted += (index, text) =>

@@ -6,6 +6,7 @@ public enum IOResultEnum
     WrongFormat         = 1,
     PermissionDenied    = 2,
     PathTooLong         = 3,
+    AlreadyExist        = 4
 }
 
 public interface IFilesManager

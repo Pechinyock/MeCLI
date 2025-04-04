@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Specialized;
+using System.Diagnostics;
 
 namespace Me;
 
@@ -13,32 +14,33 @@ internal static class CreateApplication
     {
         var appName = parameters["name"];
         var appPath = parameters["path"];
-        /* Firstly create every single directory */
-        var createRoot = new Step("Create root folder", () =>
+
+        var createDirectiryStructure = new Step("Create directory structure folder", () =>
         {
-            var result = Application.FilesManager.CreateDirectory(Path.Combine(appPath, appName));
-            Thread.Sleep(3000);
+            var pathToAppRoot = Path.Combine(appPath, appName);
+            var result = Application.FilesManager.CreateDirectory(pathToAppRoot);
+            if (result == IOResultEnum.AlreadyExist)
+            {
+                Print.Error($"Failed to create root folder: folder with name: '{appName}' already exists" +
+                    $" at {appPath}");
+                return false;
+            }
             return result == IOResultEnum.Success;
         });
 
-        var empty = new Step("Create test folder", () =>
+        var empty = new Step("empty one", () => 
         {
-            Thread.Sleep(2000);
+            Thread.Sleep(1000);
             return true;
         });
 
-        var empty1 = new Step("Create automation folder", () =>
-        {
-            Thread.Sleep(2000);
-            Print.Error("Failed to create automation folder: you don't have permissions");
-            return false;
-        });
-
         var allOperations = new MultiStepOperation("Create microservice application"
-            , ExecutionModeEnum.Immediate
-            , createRoot
+            , ExecutionModeEnum.StepByStep
+            , createDirectiryStructure
             , empty
-            , empty1
+            , empty
+            , empty
+            , empty
         );
 
         var interactivePannel = new InteractivePannel(allOperations);

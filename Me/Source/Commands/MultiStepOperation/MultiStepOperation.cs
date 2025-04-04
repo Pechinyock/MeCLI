@@ -16,6 +16,7 @@ public class MultiStepOperation : IEnumerable<IStep>, IDisposable
     public event Action<int, string> OnStepStarting;
     public event Action<int, string> OnStepCompleted;
     public event Action<int, string> OnStepFailed;
+    public event Action OnStepByStepWaited;
 
     public int StepsCount => _steps.Length;
     public IStep this[int index] => _steps[index];
@@ -50,8 +51,7 @@ public class MultiStepOperation : IEnumerable<IStep>, IDisposable
         {
             if (_executionMode == ExecutionModeEnum.StepByStep)
             {
-                Print.Warn("Press 'enter' to continue...");
-                Console.ReadLine();
+                OnStepByStepWaited?.Invoke();
             }
             var currentStepName = _steps[i].GetName();
             OnStepStarting?.Invoke(i, currentStepName);
@@ -79,5 +79,8 @@ public class MultiStepOperation : IEnumerable<IStep>, IDisposable
 
         if(OnStepFailed is not null)
             OnStepFailed -= OnStepFailed;
+
+        if(OnStepByStepWaited is not null)
+            OnStepByStepWaited -= OnStepByStepWaited;
     }
 }
