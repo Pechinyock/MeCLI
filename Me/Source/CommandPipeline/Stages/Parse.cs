@@ -5,7 +5,7 @@ namespace Me;
 
 internal sealed class Parse : StageBase
 {
-    public Parse(IPipelineContext context) : base(context) {}
+    public Parse(IPipelineContext context) : base(context) { }
 
     public override event Action<string> OnFailure;
 
@@ -17,13 +17,13 @@ internal sealed class Parse : StageBase
         Debug.Assert(sourceInput != null && sourceInput.Length > 0);
         Debug.Assert(cmdToParse != null);
 
-        if (cmdToParse.IsArgumented()) 
+        if (cmdToParse.IsArgumented())
             FillArguments(sourceInput, cmdToParse);
 
-        if(cmdToParse.IsParametrized())
+        if (cmdToParse.IsParametrized())
             FillParameters(sourceInput, cmdToParse);
 
-        if(cmdToParse.IsExternal())
+        if (cmdToParse.IsExternal())
             FillExternal(sourceInput, cmdToParse);
 
         if (cmdToParse.IsSubcommanded())
@@ -32,11 +32,11 @@ internal sealed class Parse : StageBase
         return true;
     }
 
-    private void FillSubcommands(string[] input, MeCommandBase foundedInRegistry) 
+    private void FillSubcommands(string[] input, MeCommandBase foundedInRegistry)
     {
         var subcommanded = foundedInRegistry as ISubcommanded;
         Debug.Assert(subcommanded is not null, $"{foundedInRegistry.Alias} marked as subcommanded but doesn't implement {nameof(ISubcommanded)}");
-        var subcommands = GetSubcommands(input);
+        var subcommands = GetSubcommands(input, foundedInRegistry);
         subcommanded.SetSubcommand(subcommands);
     }
 
@@ -73,14 +73,22 @@ internal sealed class Parse : StageBase
         return args.ToArray();
     }
 
-    private string[] GetSubcommands(string[] tokens) 
+    private string[] GetSubcommands(string[] tokens, MeCommandBase cmd)
     {
-        if(tokens.Length <= 1)
+        if (tokens.Length <= 1)
             return null;
 
-        var subcommands = new List<string>(tokens.Length - 1);
+        var paramIndicator = String.Empty;
 
-        for (int i = 1; i < tokens.Length; ++i) 
+        var subcommands = new List<string>(tokens.Length - 1);
+        var checkForParameterValue = cmd.IsParametrized();
+        if (checkForParameterValue) 
+        {
+            var parametrized = cmd as IParametrized;
+            paramIndicator = parametrized.GetParameterIndicator();
+        }
+
+        for (int i = 1; i < tokens.Length; ++i)
         {
             if (String.IsNullOrEmpty(tokens[i]))
                 continue;
@@ -89,6 +97,17 @@ internal sealed class Parse : StageBase
             var character = currentToken[0];
             if (!Char.IsLetter(character))
                 continue;
+
+            if (checkForParameterValue) 
+            {
+                if (i > 1)
+                {
+                    var prevToken = tokens[i - 1];
+                    var prevFirstChar = prevToken[0];
+                    if (!Char.IsLetter(prevFirstChar))
+                        continue;
+                }
+            }
 
             subcommands.Add(currentToken);
         }
@@ -156,7 +175,7 @@ internal sealed class Parse : StageBase
         return result;
     }
 
-    private static bool IsIndicator(string token, string indicator) 
+    private static bool IsIndicator(string token, string indicator)
     {
         Debug.Assert(!String.IsNullOrEmpty(token));
 

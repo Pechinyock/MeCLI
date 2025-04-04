@@ -2,7 +2,10 @@
 
 public interface IConsolePrinter
 {
-    public void Print(string message);
-    public void PrintColored(string message, ConsoleColor color);
-    public void PrintTable(ConsoleTable table);
+    void Print(string message);
+    void PrintColored(string message, ConsoleColor color);
+    void Print(ConsoleTable table);
+    void Print(InteractivePannel pannel);
+    void ChangeWirittenRowText(string newText, int rowIndex, ConsoleColor color);
+    int GetCurrentTopPossition();
 }

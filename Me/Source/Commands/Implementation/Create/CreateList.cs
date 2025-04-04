@@ -2,16 +2,12 @@
 
 internal static class CreateList
 {
-    private static readonly Dictionary<string, string> _availableToCreate = new()
-    {
-        { /* project */  Create.AvailableTypesToCreate[0], "creates new project" },
-    };
-
     public static void Do() 
     {
-        var rows = new ConsoleTableRow[_availableToCreate.Count];
+        var availableToCreate = Create.AvailableSubcommandsWithDescription;
+        var rows = new ConsoleTableRow[availableToCreate.Count];
         int index = 0;
-        foreach (var item in _availableToCreate) 
+        foreach (var item in availableToCreate)
         {
             var rowCells = new ConsoleTableCell[]
             {
@@ -21,18 +17,18 @@ internal static class CreateList
             rows[index] = new ConsoleTableRow(rowCells);
             ++index;
         }
-        var table = new ConsoleTable(new string[] 
+        var table = new ConsoleTable(new string[]
                 {
                     "Type", "Description"
                 }
             , rows
-            , new TableDisplaySettings() 
-                {
-                    ColumnsWidthPrecents = new int[] 
+            , new TableDisplaySettings()
+            {
+                ColumnsWidthPrecents = new int[]
                     {
                         20, 80
                     }
-                }
+            }
         );
         Print.Table(table);
     }

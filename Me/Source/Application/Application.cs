@@ -2,7 +2,11 @@
 
 internal class Application
 {
-    internal static Lazy<IFilesManager> FilesManager => new Lazy<IFilesManager>(() => new FilesManager());
+    internal static IFilesManager FilesManager { get => _filesManager.Value; }
+    internal static ITextValidator TextValidator { get => _textValidator.Value; }
+
+    private static Lazy<IFilesManager> _filesManager => new Lazy<IFilesManager>(() => new FilesManager());
+    private static Lazy<ITextValidator> _textValidator => new Lazy<ITextValidator>(() => new RegexValidator());
 
     public void Run(string[] args)
     {
