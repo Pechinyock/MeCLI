@@ -11,7 +11,8 @@ public enum IOResultEnum
 
 public interface IFilesManager
 {
+    string GetAppDataPath();
     IOResultEnum CreateDirectory(string path);
     IOResultEnum CreateFile(string path, string fileName);
-    bool IsExists(string path);
+    bool IsDirectiryExists(string path);
 }

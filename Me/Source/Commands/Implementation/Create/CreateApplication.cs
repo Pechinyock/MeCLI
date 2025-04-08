@@ -1,5 +1,4 @@
-﻿using System.Collections.Specialized;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Me;
 
@@ -15,32 +14,31 @@ internal static class CreateApplication
         var appName = parameters["name"];
         var appPath = parameters["path"];
 
-        var createDirectiryStructure = new Step("Create directory structure folder", () =>
+        var fileManager = Application.FilesManager;
+        var appHomeFolder = Path.Combine(appPath, appName);
+
+        var checkIfAppAlreadyExists = new Step($"Check if app already exists. App home folder: {appPath}; app name: {appName}", () => 
         {
-            var pathToAppRoot = Path.Combine(appPath, appName);
-            var result = Application.FilesManager.CreateDirectory(pathToAppRoot);
-            if (result == IOResultEnum.AlreadyExist)
+            var folderExists = fileManager.IsDirectiryExists(appHomeFolder);
+            var pathToAppData = fileManager.GetAppDataPath();
+            if (folderExists) 
             {
-                Print.Error($"Failed to create root folder: folder with name: '{appName}' already exists" +
-                    $" at {appPath}");
+                Print.Error("App already exists!");
                 return false;
             }
-            return result == IOResultEnum.Success;
-        });
-
-        var empty = new Step("empty one", () => 
-        {
-            Thread.Sleep(1000);
             return true;
         });
 
+        var createDirectiryStructure = new Step("Create directory structure folder", () =>
+        {
+            var result = fileManager.CreateDirectory(appHomeFolder);
+            return result == IOResultEnum.Success;
+        });
+
         var allOperations = new MultiStepOperation("Create microservice application"
-            , ExecutionModeEnum.StepByStep
+            , ExecutionModeEnum.Immediate
+            , checkIfAppAlreadyExists
             , createDirectiryStructure
-            , empty
-            , empty
-            , empty
-            , empty
         );
 
         var interactivePannel = new InteractivePannel(allOperations);

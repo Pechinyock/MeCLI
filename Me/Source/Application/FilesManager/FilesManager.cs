@@ -31,8 +31,24 @@ internal class FilesManager : IFilesManager
         return IOResultEnum.Success;
     }
 
-    public bool IsExists(string path)
+    public string GetAppDataPath()
     {
-        throw new NotImplementedException();
+        var specialDirectoryPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData
+            , Environment.SpecialFolderOption.Create
+        );
+        var appDataPath = Path.Combine(specialDirectoryPath, "me");
+
+        if (IsDirectiryExists(appDataPath))
+            return appDataPath;
+        else
+        {
+            CreateDirectory(appDataPath);
+            return appDataPath;
+        }
+    }
+
+    public bool IsDirectiryExists(string path)
+    {
+        return Directory.Exists(path);
     }
 }
