@@ -1,4 +1,6 @@
-﻿namespace Me;
+﻿using System.Diagnostics;
+
+namespace Me;
 
 internal class FilesManager : IFilesManager
 {
@@ -28,7 +30,46 @@ internal class FilesManager : IFilesManager
 
     public IOResultEnum CreateFile(string path, string fileName)
     {
-        return IOResultEnum.Success;
+        try
+        {
+            var fullPath = Path.Combine(path, fileName);
+            if (IsFileExists(fullPath))
+            {
+
+                return IOResultEnum.AlreadyExist;
+            }
+
+            File.Create(path);
+
+            return IOResultEnum.Success;
+        }
+        catch (ArgumentNullException)
+        {
+            /*[TODO] come up with handle */
+            return IOResultEnum.WrongFormat;
+        }
+        catch (ArgumentException)
+        {
+            return IOResultEnum.WrongFormat;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return IOResultEnum.PermissionDenied;
+        }
+        catch (PathTooLongException)
+        {
+            return IOResultEnum.PathTooLong;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            /*[TODO] come up with handle */
+            return IOResultEnum.WrongFormat;
+        }
+        catch (NotSupportedException) 
+        {
+            /*[TODO] come up with handle */
+            return IOResultEnum.WrongFormat;
+        }
     }
 
     public string GetAppDataPath()
@@ -50,5 +91,23 @@ internal class FilesManager : IFilesManager
     public bool IsDirectiryExists(string path)
     {
         return Directory.Exists(path);
+    }
+
+    public bool IsFileExists(string path)
+    {
+        Debug.Assert(!String.IsNullOrWhiteSpace(path));
+        return File.Exists(path);
+    }
+
+    public string ReadAllText(string path)
+    {
+        Debug.Assert(!String.IsNullOrEmpty(path));
+        return File.ReadAllText(path);
+    }
+
+    public void WriteAllText(string path, string text)
+    {
+        Debug.Assert(!String.IsNullOrWhiteSpace(path));
+        File.WriteAllText(path, text);
     }
 }

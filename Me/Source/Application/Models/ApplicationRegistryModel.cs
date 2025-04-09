@@ -44,7 +44,7 @@ internal class ApplicationRegistryModel : ISerializable
         return serialized;
     }
 
-    private ApplicationRegistryModel FromJson(string text) 
+    private static ApplicationRegistryModel FromJson(string text) 
     {
         var listOfProjects = JsonSerializer.Deserialize<List<ApplicationInfoModel>>(text);
         var result = new ApplicationRegistryModel(listOfProjects);

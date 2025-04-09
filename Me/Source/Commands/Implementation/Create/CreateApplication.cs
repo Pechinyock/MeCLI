@@ -21,11 +21,32 @@ internal static class CreateApplication
         {
             var folderExists = fileManager.IsDirectiryExists(appHomeFolder);
             var pathToAppData = fileManager.GetAppDataPath();
-            if (folderExists) 
+
+            var appRegistry = AppRegistry.Load();
+            if (appRegistry.Contains(appName))
+            {
+                /* get app from config get its path check if directory exists
+                 * if exists: you can't create is is already exists
+                 * if not: could be old project and source was deleted, use applicatio restore to pull source from git
+                 *         OR delete app from registry...
+                 */
+                Print.Error("Config contains it already");
+                return false;
+            }
+            if (folderExists)
             {
                 Print.Error("App already exists!");
                 return false;
             }
+
+            var newApp = new ApplicationInfoModel() { Name = appName
+                , HomePath = appPath
+                , Type = _availableTypes[0]
+                , RepositoryRemoteURL = "" 
+            };
+
+            appRegistry.Add(newApp);
+            appRegistry.Save();
             return true;
         });
 

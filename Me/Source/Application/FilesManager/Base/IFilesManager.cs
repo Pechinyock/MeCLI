@@ -15,4 +15,7 @@ public interface IFilesManager
     IOResultEnum CreateDirectory(string path);
     IOResultEnum CreateFile(string path, string fileName);
     bool IsDirectiryExists(string path);
+    bool IsFileExists(string path);
+    string ReadAllText(string path);
+    void WriteAllText(string path, string text);
 }
