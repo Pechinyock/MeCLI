@@ -2,6 +2,13 @@
 
 namespace Me;
 
+/* [TODO]
+ * Provide enum for command state 
+ *  - executing
+ *  - success
+ *  - failed
+ *  - do not override output for better error message
+ */
 internal sealed class ExternalCommandWrapper : MeCommandBase
                                              , IExternal
 {
@@ -33,9 +40,8 @@ internal sealed class ExternalCommandWrapper : MeCommandBase
             proc.WaitForExit();
             _isDone = true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            var c = ex;
             _isDone = true;
             _resultOutput = "error";
         }
@@ -43,8 +49,6 @@ internal sealed class ExternalCommandWrapper : MeCommandBase
     }
 
     public override bool Validate() => true;
-
     public string GetOutputRestlt() => _resultOutput;
-
     public bool IsCommandDone() => _isDone;
 }

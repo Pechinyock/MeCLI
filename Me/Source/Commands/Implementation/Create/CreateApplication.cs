@@ -2,6 +2,10 @@
 
 namespace Me;
 
+/* [TODO] 
+ * Create class that will describe application structure
+ * need it for comunication between defferent commands
+ */
 internal static class CreateApplication
 {
     private static readonly string[] _availableTypes = new string[]
@@ -17,49 +21,85 @@ internal static class CreateApplication
         var fileManager = Application.FilesManager;
         var appHomeFolder = Path.Combine(appPath, appName);
 
-        var checkIfAppAlreadyExists = new Step($"Check if app already exists. App home folder: {appPath}; app name: {appName}", () => 
+        var checkIfAppAlreadyExists = new Step($"Register {appName}", () =>
         {
-            var folderExists = fileManager.IsDirectiryExists(appHomeFolder);
             var pathToAppData = fileManager.GetAppDataPath();
 
             var appRegistry = AppRegistry.Load();
-            if (appRegistry.Contains(appName))
+
+            var hasInRegistry = appRegistry.Contains(appName);
+            var folderExists = fileManager.IsDirectiryExists(appHomeFolder);
+
+            if (hasInRegistry && folderExists)
             {
-                /* get app from config get its path check if directory exists
-                 * if exists: you can't create is is already exists
-                 * if not: could be old project and source was deleted, use applicatio restore to pull source from git
-                 *         OR delete app from registry...
-                 */
-                Print.Error("Config contains it already");
+                Print.Error($"Application with name: {appHomeFolder} already exists!");
                 return false;
             }
-            if (folderExists)
+            if (folderExists && !hasInRegistry)
             {
-                Print.Error("App already exists!");
+                Print.Error($"Couldn't create application! Folder: {appPath} already exists! Choose another path" +
+                    $" or cleanup the existing one");
+                return false;
+            }
+
+            if (!folderExists && hasInRegistry)
+            {
+                Print.Error($"Applicatoin with name: {appName} already defined, but folder is empty. It seems like " +
+                    $"it has been deleted or moved");
                 return false;
             }
 
             var newApp = new ApplicationInfoModel() { Name = appName
                 , HomePath = appPath
                 , Type = _availableTypes[0]
-                , RepositoryRemoteURL = "" 
+                , RepositoryRemoteURL = ""
             };
 
             appRegistry.Add(newApp);
             appRegistry.Save();
+
             return true;
         });
 
         var createDirectiryStructure = new Step("Create directory structure folder", () =>
         {
-            var result = fileManager.CreateDirectory(appHomeFolder);
-            return result == IOResultEnum.Success;
+            var homeFolderCreationResult = fileManager.CreateDirectory(appHomeFolder);
+            if (homeFolderCreationResult != IOResultEnum.Success)
+            {
+                Print.Error($"Failed to create home folder for application: {appName}");
+                return false;
+            }
+            var subDirectories = new string[]
+            {
+                "tests",
+                "automation",
+                "services"
+            };
+            foreach (var subdir in subDirectories)
+            {
+                var subDirPath = Path.Combine(appHomeFolder, subdir);
+                var opResult = fileManager.CreateDirectory(subDirPath);
+                if (opResult != IOResultEnum.Success)
+                {
+                    Print.Error($"Failed to create subdirectory {subdir} for app {appName}");
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        var initGitRepository = new Step("Creating local git repository", () => 
+        {
+            Git.Init(appHomeFolder);
+            return true;
         });
 
         var allOperations = new MultiStepOperation("Create microservice application"
             , ExecutionModeEnum.Immediate
             , checkIfAppAlreadyExists
             , createDirectiryStructure
+            , initGitRepository
         );
 
         var interactivePannel = new InteractivePannel(allOperations);
